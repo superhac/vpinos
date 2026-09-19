@@ -1,0 +1,86 @@
+{
+    "Info": {
+        "IPDBId": "5544",
+        "Title": "Adventure",
+        "Manufacturer": "Sega",
+        "Year": 1979,
+        "Type": "SS",
+        "Themes": [
+            "Adventure",
+            "Boats",
+            "Recreation",
+            "Sailing",
+            "Water"
+        ],
+        "VPSId": "VZTsPQCtxK",
+        "Authors": [],
+        "Rom": ""
+    },
+    "User": {
+        "Rating": 0,
+        "Favorite": 0,
+        "LastRun": null,
+        "StartCount": 0,
+        "RunTime": 0,
+        "Tags": [],
+        "FrontendDOFEvent": ""
+    },
+    "VPXFile": {
+        "filename": "Adventure (Sega 1979).vpx",
+        "filehash": "b76ed781e528d817765ac9c6d73aa79a4be1ae8378cf0c086a816549a3fd80f1",
+        "version": "1.0",
+        "releaseDate": "",
+        "saveDate": "Sat Apr 19 14:17:26 2025",
+        "saveRev": "407",
+        "manufacturer": "",
+        "year": "",
+        "type": "",
+        "vbsHash": "db82079e94d69789daa971723b278939c329eacb28b1c957357f2f09eec5e0f1",
+        "rom": "",
+        "detectnfozzy": false,
+        "detectfleep": false,
+        "detectssf": false,
+        "detectlut": false,
+        "detectscorebit": false,
+        "detectfastflips": false,
+        "detectflex": false
+    },
+    "VPinFE": {
+        "deletedNVRamOnClose": false,
+        "altlauncher": "",
+        "alttitle": "",
+        "altvpsid": ""
+    },
+    "Medias": {
+        "bg": {
+            "Source": "vpinmediadb",
+            "Path": "bg.png",
+            "MD5Hash": "bc8f9d8d466b6fa56c143c5304e32f65"
+        },
+        "dmd": {
+            "Source": "vpinmediadb",
+            "Path": "dmd.png",
+            "MD5Hash": "0684af2041a9d31717317fae81410223"
+        },
+        "wheel": {
+            "Source": "vpinmediadb",
+            "Path": "wheel.png",
+            "MD5Hash": "40d3f13f1d0fcdd89c1bc7887db45a6a"
+        },
+        "cab": {
+            "Source": "vpinmediadb",
+            "Path": "cab.png",
+            "MD5Hash": "4805479a1f52535390c7874c6318ed3d"
+        },
+        "table": {
+            "Source": "vpinmediadb",
+            "Path": "table.png",
+            "MD5Hash": "356da9a2a5cea73d3aa9d775ba954689"
+        },
+        "flyer": {
+            "Source": "vpinmediadb",
+            "Path": "flyer.png",
+            "MD5Hash": "ea1a5efb422ed6c065f68c987e9b455f"
+        }
+    }
+}

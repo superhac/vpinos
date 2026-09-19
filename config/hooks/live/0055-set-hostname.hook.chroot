@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+# /etc/hostname only -- NOT /etc/hosts, which can't be reliably set
+# from a build-time hook at all (confirmed directly, the hard way: see
+# vpinos.md step 7 for the full story -- live-build has its own
+# internal chroot_hosts install/remove lifecycle that brackets
+# network-dependent build operations, and its very last "remove" runs
+# after every hook mechanism available, unconditionally restoring
+# /etc/hosts to its pristine empty state). /etc/hosts is instead
+# written at BOOT time by vpinos-hosts.service (see
+# config/includes.chroot/etc/systemd/system/), enabled in
+# 0200-enable-kiosk.hook.chroot.
+echo "vpinos" > /etc/hostname

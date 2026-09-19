@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+# /etc/issue (the console login banner) and /etc/issue.net (network
+# logins) are static files from the base-files package -- confirmed
+# directly ("Debian GNU/Linux 13 \n \l") -- never updated when
+# /etc/os-release was rebranded to VPinOS, so every login prompt still
+# said "Debian GNU/Linux 13" regardless. PRETTY_NAME used here (not a
+# hardcoded "VPinOS 1.0") for the same single-source-of-truth reason as
+# every other versioned asset in this project -- see step 8.
+#
+# \n and \l are agetty escape sequences (hostname, tty line) processed
+# at login time, not literal characters -- kept from the original
+# template. issue.net has no escape sequences in the original either
+# (network clients can't be trusted with local escape codes), so none
+# added here.
+. /etc/os-release
+
+cat > /etc/issue << EOF
+${PRETTY_NAME} \n \l
+
+EOF
+
+echo "${PRETTY_NAME}" > /etc/issue.net

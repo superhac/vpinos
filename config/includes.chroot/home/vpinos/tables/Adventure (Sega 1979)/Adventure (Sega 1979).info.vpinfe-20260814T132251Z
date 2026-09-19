@@ -1,0 +1,59 @@
+{
+    "Info": {
+        "IPDBId": "5544",
+        "Title": "Adventure",
+        "Manufacturer": "Sega",
+        "Year": 1979,
+        "Type": "SS",
+        "Themes": [
+            "Adventure",
+            "Boats",
+            "Recreation",
+            "Sailing",
+            "Water"
+        ],
+        "VPSId": "VZTsPQCtxK"
+    },
+    "User": {
+        "Rating": 0,
+        "Favorite": 0,
+        "LastRun": null,
+        "StartCount": 0,
+        "RunTime": 0,
+        "Tags": []
+    },
+    "vpinfe": {
+        "delete_nvram_on_close": false,
+        "alt_launcher": "",
+        "alt_title": "",
+        "alt_vpsid": "",
+        "schema": 2,
+        "frontend_dof_event": "",
+        "default_table": "1ixfZy5Drt",
+        "game_id": "24YfHnZPh6"
+    },
+    "tables": {
+        "1ixfZy5Drt": {
+            "file_hash": "b76ed781e528d817765ac9c6d73aa79a4be1ae8378cf0c086a816549a3fd80f1",
+            "version": "1.0",
+            "release_date": "",
+            "save_date": "2025-04-19T14:17:26",
+            "save_rev": "407",
+            "manufacturer": "",
+            "year": "",
+            "type": "",
+            "vbs_hash": "db82079e94d69789daa971723b278939c329eacb28b1c957357f2f09eec5e0f1",
+            "rom": "",
+            "detect_nfozzy": false,
+            "detect_fleep": false,
+            "detect_ssf": false,
+            "detect_lut": false,
+            "detect_scorbit": false,
+            "detect_fastflips": false,
+            "detect_flex": false,
+            "authors": [],
+            "filename": "Adventure (Sega 1979).vpx",
+            "id": "1ixfZy5Drt"
+        }
+    }
+}

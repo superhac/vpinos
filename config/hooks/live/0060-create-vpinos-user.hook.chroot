@@ -1,0 +1,27 @@
+#!/bin/sh
+set -e
+
+# Hardcoded appliance account, baked into the squashfs at build time --
+# NOT created dynamically by live-config (its own live `user` account)
+# or interactively by Calamares's `users` module (removed from
+# settings.conf, see config/includes.chroot/etc/calamares/settings.conf).
+# Since Calamares's unpackfs module copies this squashfs verbatim to
+# the target BEFORE any install-time module runs, this account already
+# exists on a freshly-installed system with zero installer involvement.
+#
+# Groups: video+input+audio+render for direct DRM/seat/input/audio
+# device access (seatd's default config already grants socket access
+# to the `video` group -- confirmed via /etc/default/seatd -- so no
+# custom seatd config needed); sudo for the installer's actual root
+# requirement (partitioning) -- see vpinos-menu.sh, which only sudo's
+# the installer option now, not vpinball/vpinfe/Chrome.
+useradd -m -s /bin/bash -G video,input,audio,render,sudo vpinos
+echo "vpinos:vpinos" | chpasswd
+
+# includes.chroot content (vpinfe's config/tables under /home/vpinos)
+# is already on disk by the time hooks run, copied with whatever
+# ownership it had on the (unprivileged) build host -- `useradd -m`'s
+# behavior when the target home directory already exists isn't
+# something to depend on, so fix ownership explicitly rather than trust
+# it.
+chown -R vpinos:vpinos /home/vpinos

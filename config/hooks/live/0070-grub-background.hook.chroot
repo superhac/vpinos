@@ -1,0 +1,60 @@
+#!/bin/sh
+set -e
+
+# The live ISO's own boot splash (config/bootloaders/splash.svg) is
+# handled entirely by live-build's binary_bootloader_splash script,
+# which renders it straight into the ISO's own isolinux/grub-efi boot
+# files -- outside the squashfs/chroot entirely. That's why it never
+# carried over to an installed system: Calamares's grubcfg module runs
+# a normal `update-grub` in the TARGET chroot, which only ever reads
+# the target's own /etc/default/grub and /boot/grub -- neither of
+# which the live ISO's splash mechanism ever touches. Rendering our
+# own copy here, at build time, so it's actually present in what gets
+# installed.
+#
+# Uses a SEPARATE, dedicated SVG (grub-installed-background.svg), not
+# splash.svg itself -- confirmed via a real screenshot that reusing the
+# exact same file looked bad here: splash.svg's logo size/position was
+# hand-tuned (see step 7) specifically for isolinux/vesamenu's boot
+# menu, which sits low on screen. This installed system's GRUB runs its
+# own PLAIN native menu (no vesamenu theming) at a different position,
+# which overlapped the logo badly. The dedicated version has the same
+# embedded logo image but much smaller and confined to the very top of
+# the screen, leaving the large majority of the canvas clear for GRUB's
+# own menu box regardless of exactly where it centers itself or how
+# many entries it ends up with.
+#
+# @VERSION@ substitution done manually here (not by live-build, which
+# only does this for the live ISO's own splash) -- same source of
+# truth as the boot-menu splash, VERSION_ID from this same file.
+. /etc/os-release
+
+mkdir -p /boot/grub
+sed "s/@VERSION@/${VERSION_ID}/g" /usr/share/vpinos/grub-installed-background.svg \
+    | rsvg-convert -w 800 -h 600 -o /boot/grub/vpinos-background.png
+
+rm -f /usr/share/vpinos/grub-installed-background.svg
+rmdir /usr/share/vpinos 2>/dev/null || true
+
+# GRUB_TERMINAL_OUTPUT=gfxterm is required, not optional -- confirmed
+# by reading /etc/grub.d/05_debian_theme directly: its
+# set_background_image() function checks GRUB_TERMINAL_OUTPUT for
+# "gfxterm" first and silently falls back to the plain default theme
+# (no background at all, no error) if it's unset, regardless of
+# GRUB_BACKGROUND being set correctly. Our default /etc/default/grub
+# never sets this at all.
+#
+# GRUB_GFXMODE forced to match the background's own resolution exactly
+# -- GRUB stretches a background image to fill whatever resolution it
+# actually runs at, so leaving this at its native/auto-detected default
+# would distort a fixed-aspect-ratio 800x600 image on a widescreen
+# display. Appended, not overwritten -- /etc/default/grub already has
+# real defaults from the grub package's own postinst that shouldn't be
+# clobbered.
+cat >> /etc/default/grub << 'EOF'
+
+# VPinOS branding (see 0070-grub-background.hook.chroot)
+GRUB_BACKGROUND="/boot/grub/vpinos-background.png"
+GRUB_GFXMODE=800x600
+GRUB_TERMINAL_OUTPUT=gfxterm
+EOF

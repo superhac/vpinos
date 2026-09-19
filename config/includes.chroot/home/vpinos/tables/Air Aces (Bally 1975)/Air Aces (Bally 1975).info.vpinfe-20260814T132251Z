@@ -1,0 +1,60 @@
+{
+    "Info": {
+        "IPDBId": "28",
+        "Title": "Air Aces",
+        "Manufacturer": "Bally",
+        "Year": 1975,
+        "Type": "EM",
+        "Themes": [
+            "Adventure",
+            "Aviation",
+            "Combat"
+        ],
+        "VPSId": "ngXHaZwR",
+        "PinballPrimerTut": "https://pinballprimer.github.io/airaces_G420v.html"
+    },
+    "User": {
+        "Rating": 0,
+        "Favorite": 0,
+        "LastRun": null,
+        "StartCount": 0,
+        "RunTime": 0,
+        "Tags": []
+    },
+    "vpinfe": {
+        "delete_nvram_on_close": false,
+        "alt_launcher": "",
+        "alt_title": "",
+        "alt_vpsid": "",
+        "schema": 2,
+        "frontend_dof_event": "",
+        "default_table": "qysrN8mY43",
+        "game_id": "Y4zcANMeVh"
+    },
+    "tables": {
+        "qysrN8mY43": {
+            "file_hash": "51124bf805d2e03620bcbc52c2e9cd97bb5da3036c29de576305644f7ece5748",
+            "version": "2.0",
+            "release_date": "2018-09",
+            "save_date": "",
+            "save_rev": "",
+            "manufacturer": "",
+            "year": "",
+            "type": "",
+            "vbs_hash": "08360af3ee981aecdd47475e85003e15584febce0e69b64f8634c8d5b1112a91",
+            "rom": "airaces_1974",
+            "detect_nfozzy": false,
+            "detect_fleep": false,
+            "detect_ssf": false,
+            "detect_lut": false,
+            "detect_scorbit": false,
+            "detect_fastflips": false,
+            "detect_flex": false,
+            "authors": [
+                "Updon/Bord/Scottacus"
+            ],
+            "filename": "Air Aces (Bally 1975).vpx",
+            "id": "qysrN8mY43"
+        }
+    }
+}

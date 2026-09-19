@@ -1,0 +1,32 @@
+#!/bin/sh
+set -e
+
+chmod +x /opt/vpinball/launch.sh
+chmod +x /opt/vpinball/vpinos-menu.sh
+ln -sf /opt/vpinball/vpinos-menu.sh /usr/local/bin/vpinos-menu
+systemctl set-default multi-user.target
+systemctl enable seatd.service
+systemctl enable NetworkManager.service
+systemctl enable vpinos-hosts.service
+
+# sudoers.d files are silently ignored by sudo unless they're exactly
+# root:root 0440 -- includes.chroot copies this file with whatever
+# ownership/perms it had on the (unprivileged) build host, so fix it
+# explicitly here rather than trust that.
+chown root:root /etc/sudoers.d/vpinos
+chmod 0440 /etc/sudoers.d/vpinos
+
+# vpinball/vpinfe/Chrome now run as `vpinos` (non-root), but launch.sh/
+# vpinos-menu.sh write to these via `>>`, and /var/log is root:root
+# 0755 -- a non-root process can only append to a file that already
+# exists and is writable by it, not create a new one there. Root
+# (the installer, still sudo'd) can always write regardless of
+# ownership, so owning these by vpinos works for both.
+touch /var/log/vpinos-launch.log /var/log/vpinos-weston.log /var/log/vpinos-menu.log
+chown vpinos:vpinos /var/log/vpinos-launch.log /var/log/vpinos-weston.log /var/log/vpinos-menu.log
+
+# No systemd service for weston itself -- boot goes to a normal console.
+# Run `vpinos-menu` by hand to bring up the (crude, placeholder) menu;
+# picking its one option runs launch.sh, which execs weston directly
+# (inheriting the caller's tty/session) and launches vpinball as its
+# client once the Wayland socket is up.

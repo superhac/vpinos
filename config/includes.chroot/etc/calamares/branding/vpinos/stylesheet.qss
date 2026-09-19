@@ -1,0 +1,45 @@
+/* VPinOS theme -- colors sampled directly from the actual logo
+ * (config/bootloaders/splash.svg's embedded PNG): black background,
+ * vivid cyan-blue accent (#01B4FE, from the "OS" text/neon glow), red
+ * accent (#FD1B1E, from the flipper bumpers).
+ *
+ * Deliberately scoped to the sidebar + buttons only, NOT the main
+ * content area -- confirmed directly (real screenshots) that forcing
+ * #mainApp to black/white broke several individual install modules
+ * (partition chooser, location map): their labels paint text via
+ * QPalette/custom widgets rather than respecting a QSS `color`
+ * override, so the text stayed black -- invisible on a black
+ * background. The sidebar (SidebarBackground/SidebarText/etc. in
+ * branding.desc, which is what #sidebarApp/#logoApp correspond to
+ * under the hood -- see that file's own comment) renders correctly
+ * because those are Calamares's own dedicated, tested styling hooks;
+ * the main content area isn't, so it stays at its normal light
+ * default rather than fighting every module's own internal styling.
+ *
+ * Object-name IDs (#mainApp, #sidebarApp, #logoApp) are Calamares's
+ * own C++ object names, not something we chose -- see the branding
+ * component's own documented example (calamares's default branding
+ * stylesheet.qss) for how these were found (Debug Dialog -> Tools ->
+ * Widget Tree).
+ */
+
+QPushButton {
+    background-color: #01B4FE;
+    color: #000000;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 14px;
+}
+
+QPushButton:hover {
+    background-color: #3BC4FF;
+}
+
+QPushButton:pressed {
+    background-color: #0090CC;
+}
+
+QPushButton:disabled {
+    background-color: #2A2A2A;
+    color: #808080;
+}

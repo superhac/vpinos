@@ -1,0 +1,93 @@
+{
+    "Info": {
+        "IPDBId": "9",
+        "Title": "Aces High",
+        "Manufacturer": "Bally",
+        "Year": 1965,
+        "Type": "EM",
+        "Themes": [
+            "Cards",
+            "Gambling",
+            "Poker",
+            "Riverboat"
+        ],
+        "VPSId": "cCkpZwfG",
+        "Authors": [
+            "-=Kees=-"
+        ],
+        "Rom": "",
+        "PinballPrimerTut": "https://pinballprimer.github.io/aceshigh_G56BE.html"
+    },
+    "User": {
+        "Rating": 0,
+        "Favorite": 0,
+        "LastRun": null,
+        "StartCount": 0,
+        "RunTime": 0,
+        "Tags": [],
+        "FrontendDOFEvent": ""
+    },
+    "VPXFile": {
+        "filename": "Aces High (Bally 1965).vpx",
+        "filehash": "c5f79c9455b12730997d94f953c3635809b5757085287d09fe1a6adbe033aade",
+        "version": "VPX 10.1",
+        "releaseDate": "August 2016",
+        "saveDate": "",
+        "saveRev": "",
+        "manufacturer": "",
+        "year": "",
+        "type": "",
+        "vbsHash": "65be1e59b364b010c692db4988a5f353479e41abf0c39a6d0ad7c2e65046008e",
+        "rom": "",
+        "detectnfozzy": false,
+        "detectfleep": false,
+        "detectssf": false,
+        "detectlut": false,
+        "detectscorebit": false,
+        "detectfastflips": false,
+        "detectflex": false
+    },
+    "VPinFE": {
+        "deletedNVRamOnClose": false,
+        "altlauncher": "",
+        "alttitle": "",
+        "altvpsid": ""
+    },
+    "Medias": {
+        "bg": {
+            "Source": "vpinmediadb",
+            "Path": "bg.png",
+            "MD5Hash": "fb296cb191592bf0d8f6fa50dc0a72e5"
+        },
+        "wheel": {
+            "Source": "vpinmediadb",
+            "Path": "wheel.png",
+            "MD5Hash": "6234041bab49dcea08f499db39fb2c7e"
+        },
+        "cab": {
+            "Source": "vpinmediadb",
+            "Path": "cab.png",
+            "MD5Hash": "72851198b0af71f4f69016b270c386a3"
+        },
+        "flyer": {
+            "Source": "vpinmediadb",
+            "Path": "flyer.png",
+            "MD5Hash": "521ae834d942d299ea38c15d8a827b23"
+        },
+        "table": {
+            "Source": "vpinmediadb",
+            "Path": "table.png",
+            "MD5Hash": "2afa6bca7cbe74a10087c5349ca9e5b4"
+        },
+        "table_video": {
+            "Source": "vpinmediadb",
+            "Path": "table.mp4",
+            "MD5Hash": "a80f3f189617f12588cbdcb9d9bf700d"
+        },
+        "audio": {
+            "Source": "vpinmediadb",
+            "Path": "audio.mp3",
+            "MD5Hash": "ef5fd6e3bc30de9a54c520c5e6c156a6"
+        }
+    }
+}

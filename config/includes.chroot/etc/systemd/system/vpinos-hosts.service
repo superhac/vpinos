@@ -1,0 +1,24 @@
+# /etc/hosts can't be reliably set from a build-time hook -- see
+# 0055-set-hostname.hook.chroot's own comment, and vpinos.md step 7,
+# for why (live-build's own internal chroot_hosts lifecycle
+# unconditionally restores it to an empty file as one of the very last
+# actions in the build, after every hook mechanism available). Setting
+# it here instead, at boot, the same general approach live-config uses
+# for the live session -- except live-config never runs on an installed
+# system at all, so this covers that case too. Runs unconditionally on
+# every boot (harmless to rewrite identical content each time) rather
+# than only if missing, in case anything else at runtime empties it
+# again.
+[Unit]
+Description=VPinOS: ensure /etc/hosts has a working baseline
+DefaultDependencies=no
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'printf "127.0.0.1\tlocalhost\n127.0.1.1\tvpinos\n\n::1\t\tlocalhost ip6-localhost ip6-loopback\nff02::1\t\tip6-allnodes\nff02::2\t\tip6-allrouters\n" > /etc/hosts'
+
+[Install]
+WantedBy=sysinit.target

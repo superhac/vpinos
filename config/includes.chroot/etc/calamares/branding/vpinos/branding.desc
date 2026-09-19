@@ -1,0 +1,50 @@
+---
+componentName:   vpinos
+welcomeStyleCalamares: true
+welcomeExpandingLogo: true
+windowExpanding: normal
+windowSize: 800px,580px
+windowPlacement: center
+
+# ${NAME}/${VERSION_ID}/${PRETTY_NAME} are substituted from
+# /etc/os-release at build time -- the same single source of truth the
+# boot splash's @VERSION@ reads (see step 7). Keeps this in sync
+# automatically rather than hardcoding "1.0" a second place that would
+# need remembering on every release.
+strings:
+    productName:         "${NAME}"
+    shortProductName:    "${NAME}"
+    version:             "${VERSION_ID}"
+    shortVersion:        "${VERSION_ID}"
+    versionedName:       "${PRETTY_NAME}"
+    shortVersionedName:  "${PRETTY_NAME}"
+    bootloaderEntryName: VPinOS
+    productUrl:          ""
+    supportUrl:          ""
+    knownIssuesUrl:      ""
+    releaseNotesUrl:     ""
+    donateUrl:           ""
+
+sidebar: widget
+navigation: widget
+
+images:
+    productIcon:         "logo.png"
+    productLogo:         "logo.png"
+    productWelcome:      "welcome.png"
+
+slideshow:               "show.qml"
+slideshowAPI: 2
+
+# Grey sidebar matching the main content area's actual background --
+# Qt's Fusion style (Calamares's default) uses #EFEFEF for its standard
+# QPalette::Window color, not pure white; a pure-white sidebar (tried
+# first) looked visibly inconsistent against it. SidebarBackgroundCurrent
+# keeps the accent blue sampled directly from the actual logo
+# (config/bootloaders/splash.svg's embedded PNG, "OS" text/neon glow,
+# #01B4FE) as the one spot of color.
+style:
+   SidebarBackground:        "#EFEFEF"
+   SidebarText:              "#000000"
+   SidebarBackgroundCurrent: "#01B4FE"
+   SidebarTextCurrent:       "#000000"

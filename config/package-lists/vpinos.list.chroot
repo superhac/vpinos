@@ -1,0 +1,143 @@
+# base
+systemd-sysv
+linux-image-amd64
+# Broad firmware (all vendors: GPU, WiFi, Bluetooth, audio DSP, NICs) --
+# costs ~850M installed, but the target cabinet's actual hardware isn't
+# known yet, so a narrower vendor-specific set (tried once, reverted)
+# risks silently breaking WiFi/Bluetooth/audio on real hardware. Revisit
+# once target hardware is confirmed (see Open Decisions).
+firmware-linux
+
+# GPU / Vulkan
+mesa-vulkan-drivers
+libvulkan1
+vulkan-tools
+libgl1-mesa-dri
+
+# Wayland compositor (weston kiosk session)
+weston
+seatd
+libwayland-client0
+libwayland-egl1
+libdrm2
+libgbm1
+libinput10
+libudev1
+# wayland-info: compositor-agnostic replacement for weston-info (not
+# bundled with the weston package in trixie) and for wlr-randr (which
+# needs the wlroots-only wlr-output-management-unstable-v1 protocol --
+# confirmed via `strings` on libweston-14.so.0 that weston doesn't
+# implement it at all). wayland-info queries core wl_output plus the
+# XDG output protocol extension, which is what carries output names.
+wayland-utils
+
+# input / audio
+alsa-utils
+
+# remote/debug access
+openssh-server
+
+# networking -- confirmed directly this was missing entirely, not a
+# regression from anything recent: even on the live session, vpinfe's
+# own theme-registry fetch (a GitHub raw.githubusercontent.com request)
+# failed to resolve DNS, and on an installed system `ip a` showed the
+# ethernet interface in DOWN state with no `/etc/network/interfaces`
+# stanza for it at all (`ifup` fails outright: "unknown interface").
+# This image never had ANY mechanism to bring an interface up --
+# NetworkManager auto-configures any interface via DHCP with zero
+# per-interface config needed, unlike bare `ifupdown`, and covers WiFi
+# too whenever real cabinet hardware needs it (matches the broad-
+# firmware decision -- target hardware still unknown, see Open
+# Decisions).
+network-manager
+
+# sudo: never listed here before -- it was only ever present because
+# live-config transitively pulls it in (needed for live-config's own
+# 0040-sudo component, which grants the live `user` account passwordless
+# sudo at boot). That made apt mark it auto-installed, not manual --
+# and that's a real bug, confirmed via a Calamares installer test:
+# calamares's stock packages.conf purges live-config/live-boot post-
+# install (correct -- those are live-only), and the follow-up
+# `apt-get autoremove` correctly saw sudo as now-orphaned and tried to
+# remove it too. dpkg's own prerm safety check refused ("no root
+# password has been set... Refusing to remove sudo"), which halted the
+# whole install with a generic "Package Manager error" in the UI.
+# Listing it explicitly here marks it manual, exempting it from any
+# future autoremove sweep -- same as every other package in this list.
+sudo
+
+# fetching prebuilt vpinball/vpinfe .deb packages at build time from
+# github.com/superhac/vpinos-deb-repo (see
+# 0100-install-vpinos-debs.hook.chroot) -- their own runtime deps are
+# pulled in automatically by `apt install ./*.deb`, so no compiler
+# toolchain or -dev headers are needed here anymore (Option B, not A)
+curl
+jq
+
+# Installer (live-then-install, like Mint/MX). calamares-settings-debian:
+# Debian's own official branding/config module (used by Debian's own
+# live images) -- pulls in calamares itself plus the tools its modules
+# need (rsync, cryptsetup, pkexec).
+#
+# Runs under Xwayland (`xwayland`, weston's `--xwayland` flag), not
+# native Wayland -- confirmed directly that calamares's Wayland support
+# is unreliable: even with QT_QPA_PLATFORM=wayland forced and
+# qt6-wayland installed, its main window rendered fine but its cancel
+# confirmation popup had readable text with zero button/panel chrome
+# (tried forcing QT_QUICK_CONTROLS_STYLE=Basic -- no change), and a
+# separate test run crashed outright with a raw Xlib "Cannot open
+# display" error -- something inside calamares calls XOpenDisplay()
+# directly regardless of QT_QPA_PLATFORM. Two independent
+# community-known workarounds for calamares-under-VM issues both target
+# XCB specifically, not Wayland, which lines up. See launch.sh for the
+# installer-specific X11 environment (kept isolated from the Wayland
+# path every other client uses).
+calamares
+calamares-settings-debian
+xwayland
+
+# librsvg2-bin (rsvg-convert): renders our own GRUB background PNG at
+# build time from config/bootloaders/splash.svg (staged into the chroot
+# at /usr/share/vpinos/splash.svg, see 0070-grub-background.hook.chroot)
+# -- the live ISO's own boot splash is handled entirely separately by
+# live-build's binary_bootloader_splash, which never touches the
+# chroot/squashfs at all, so an installed system's own update-grub
+# (run by Calamares's grubcfg module) never saw it without this. Listed
+# permanently rather than installed+purged transiently within the hook
+# -- avoids any risk of a repeat of the sudo/autoremove bug above over
+# a few MB of disk space.
+librsvg2-bin
+
+# grub-efi-amd64: needed so /etc/default/grub already has its real,
+# complete defaults (GRUB_DEFAULT/GRUB_TIMEOUT/GRUB_DISTRIBUTOR/
+# GRUB_CMDLINE_LINUX_DEFAULT/...) BEFORE
+# 0070-grub-background.hook.chroot appends to it. Took three attempts
+# to find the actual right package -- worth recording so nobody repeats
+# the same dead ends:
+#   1. Assumed grub2-common ships /etc/default/grub. Added it alone --
+#      didn't help, file was still missing its real defaults.
+#   2. Assumed live-build's `lb binary_grub-efi` stage (a separate,
+#      LATER stage than hooks/live/*.hook.chroot -- confirmed via the
+#      build log's own timestamps) was temporarily installing
+#      grub-efi-amd64-bin and force-purging it afterward
+#      (`dpkg --force`, "this is a protected package; it should not be
+#      removed"), wiping our hook's edits. Added grub-efi-amd64-bin
+#      explicitly too, on the theory that listing it ourselves would
+#      make live-build treat it as wanted rather than disposable.
+#      Confirmed via the build log that it genuinely stopped being
+#      purged this time -- but the file was STILL broken, proving this
+#      theory wrong too.
+#   3. Added debug output directly into the hook (`cat /etc/default/grub`
+#      plus `dpkg -l` right before our own edit) and rebuilt to get
+#      real evidence instead of guessing a third time. Result: the file
+#      didn't exist at all at hook-run time, despite `dpkg -l` showing
+#      BOTH grub2-common and grub-efi-amd64-bin as fully configured
+#      (`ii`) already -- neither package actually creates this file.
+#      Confirmed directly in an isolated container test: installing
+#      just those two leaves the file missing; installing the
+#      grub-efi-amd64 METAPACKAGE on top is what actually creates it
+#      (it shares postinst/debconf logic with grub-pc for the
+#      interactive "install grub now" setup, which `-bin` packages
+#      don't have). That's the actual fix -- replaces grub-efi-amd64-bin
+#      below (grub-efi-amd64 depends on it anyway, so nothing is lost).
+grub-efi-amd64

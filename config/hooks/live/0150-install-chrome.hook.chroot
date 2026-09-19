@@ -1,0 +1,98 @@
+#!/bin/sh
+set -e
+
+# vpinfe's "slim" build doesn't bundle its own Chromium (the full build
+# does -- 633M of its ~955M footprint, confirmed by inspecting the
+# actual .deb contents). The slim build expects a system browser to
+# already be present instead. No published checksum sidecar for
+# Google's "current" direct-download URL (unlike vpinos-deb-repo's
+# releases) -- relying on HTTPS transport + dpkg's own package
+# integrity checks during unpack.
+
+workdir=$(mktemp -d)
+cd "$workdir"
+
+curl -fsSL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o google-chrome-stable.deb
+apt-get install -y ./google-chrome-stable.deb
+
+cd /
+rm -rf "$workdir"
+
+# vpinfe invokes the plain "/usr/bin/google-chrome" name (an
+# update-alternatives symlink) with no flags of its own, and Chrome
+# defaults to the X11 Ozone platform -- confirmed directly: it fails
+# immediately with "Missing X server or $DISPLAY" since there's no X11
+# (or XWayland) here at all, only weston. Also running as root (which
+# everything in this image's launch chain does) without --no-sandbox is
+# a well-known Chrome failure on its own, on top of the Ozone issue --
+# --no-sandbox is safe here specifically because Chrome only ever
+# renders vpinfe's own local UI (served from 127.0.0.1), not arbitrary
+# untrusted web content. Replacing the update-alternatives symlink with
+# a wrapper is simplest: vpinfe keeps calling the same path, and gets
+# the right flags transparently, without needing changes on vpinfe's
+# own side.
+#
+# --use-gl=swiftshader --enable-unsafe-swiftshader: with the
+# Ozone/sandbox issues fixed, Chrome ran with real, healthy-looking
+# processes (confirmed via `ps`) and zero error output, but rendered
+# pure black indefinitely -- not a crash, just never painting a frame.
+# First tried --disable-gpu (the more commonly-suggested flag for
+# GPU-less VMs), which didn't fix it either. The actual issue: Chrome's
+# GPU process, even with hardware acceleration unavailable (VirtualBox's
+# virtual GPU doesn't support real Vulkan/GL, already established), still
+# needs an explicit, *working* GL backend to ever paint anything --
+# `--disable-gpu` tries to eliminate the GPU process entirely, which is a
+# different, likely counterproductive approach here. `--use-gl=swiftshader`
+# keeps the GPU process but forces it onto Chrome's own software GL
+# implementation (SwiftShader); `--enable-unsafe-swiftshader` is required
+# alongside it on current Chrome, which gates SwiftShader behind explicit
+# opt-in for security reasons. Worth revisiting once testing moves to
+# real cabinet hardware with a real GPU, where forcing software
+# rendering may cost performance for no reason.
+# $real_chrome_wrapper (what /usr/bin/google-chrome resolves to,
+# /opt/google/chrome/google-chrome) is ITSELF a bash wrapper script
+# Google ships, not the compiled binary -- confirmed directly via
+# strace on a real hang: a single execve() showed our own four flags
+# repeated four times in one argv list. Chrome's multi-process
+# architecture re-execs itself for every child process (renderer, GPU
+# process, ...), and each hop through *two* layers of shell-script
+# wrapping (ours, then Google's) re-added flags. Google's own wrapper
+# also separately pipes stdout/stderr through `cat` subshells
+# (`exec > >(exec cat)`), an extra buffering layer our own `stdbuf`
+# fix in launch.sh never accounted for -- plausibly also why no client
+# output ever reached the log during this whole debugging stretch.
+# Fix: point straight at the real compiled binary
+# ($HERE/chrome, alongside the wrapper -- confirmed directly by
+# reading Google's wrapper script), skipping Google's wrapper layer
+# entirely, not just avoiding our own double-wrapping.
+real_chrome_wrapper=$(readlink -f /usr/bin/google-chrome)
+real_chrome="$(dirname "$real_chrome_wrapper")/chrome"
+
+wrapper_path=/opt/vpinball/google-chrome-wrapper.sh
+mkdir -p /opt/vpinball
+cat > "$wrapper_path" << WRAPPER
+#!/bin/sh
+exec "$real_chrome" --ozone-platform=wayland --no-sandbox --use-gl=swiftshader --enable-unsafe-swiftshader "\$@"
+WRAPPER
+chmod +x "$wrapper_path"
+
+# Originally this directly overwrote /usr/bin/google-chrome's file
+# content -- confirmed directly (via a real Calamares install test,
+# not a guess) that this doesn't survive: update-alternatives' own
+# state (/var/lib/dpkg/alternatives/google-chrome) never knew we'd
+# bypassed it, so it still considers itself the owner of that path.
+# Something in Calamares's post-install package cleanup (its
+# `packages` module runs `apt-get remove`/`autoremove` on the target,
+# which processes dpkg triggers system-wide as a side effect)
+# re-synced /usr/bin/google-chrome back to a symlink pointing at
+# Google's own postinst-registered choice (priority 200), silently
+# undoing the fix -- confirmed via `ls -la /usr/bin/google-chrome` on
+# a real installed system afterward. This never showed up in live-
+# session testing, which boots straight from the squashfs with no
+# such install-time dpkg activity. Registering our own wrapper as a
+# HIGHER-priority alternative instead, rather than fighting
+# update-alternatives by re-overwriting the raw file: its own default
+# "auto" mode always selects the highest-priority registered choice,
+# so ours keeps winning even after any future trigger reprocessing --
+# working with the mechanism instead of bypassing it.
+update-alternatives --install /usr/bin/google-chrome google-chrome "$wrapper_path" 300

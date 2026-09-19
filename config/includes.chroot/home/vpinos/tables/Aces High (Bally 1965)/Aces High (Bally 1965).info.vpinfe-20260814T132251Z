@@ -1,0 +1,61 @@
+{
+    "Info": {
+        "IPDBId": "9",
+        "Title": "Aces High",
+        "Manufacturer": "Bally",
+        "Year": 1965,
+        "Type": "EM",
+        "Themes": [
+            "Cards",
+            "Gambling",
+            "Poker",
+            "Riverboat"
+        ],
+        "VPSId": "cCkpZwfG",
+        "PinballPrimerTut": "https://pinballprimer.github.io/aceshigh_G56BE.html"
+    },
+    "User": {
+        "Rating": 0,
+        "Favorite": 0,
+        "LastRun": null,
+        "StartCount": 0,
+        "RunTime": 0,
+        "Tags": []
+    },
+    "vpinfe": {
+        "delete_nvram_on_close": false,
+        "alt_launcher": "",
+        "alt_title": "",
+        "alt_vpsid": "",
+        "schema": 2,
+        "frontend_dof_event": "",
+        "default_table": "6oLogNxD5N",
+        "game_id": "ZAUNYqxbxd"
+    },
+    "tables": {
+        "6oLogNxD5N": {
+            "file_hash": "c5f79c9455b12730997d94f953c3635809b5757085287d09fe1a6adbe033aade",
+            "version": "VPX 10.1",
+            "release_date": "2016-08",
+            "save_date": "",
+            "save_rev": "",
+            "manufacturer": "",
+            "year": "",
+            "type": "",
+            "vbs_hash": "65be1e59b364b010c692db4988a5f353479e41abf0c39a6d0ad7c2e65046008e",
+            "rom": "",
+            "detect_nfozzy": false,
+            "detect_fleep": false,
+            "detect_ssf": false,
+            "detect_lut": false,
+            "detect_scorbit": false,
+            "detect_fastflips": false,
+            "detect_flex": false,
+            "authors": [
+                "-=Kees=-"
+            ],
+            "filename": "Aces High (Bally 1965).vpx",
+            "id": "6oLogNxD5N"
+        }
+    }
+}

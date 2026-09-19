@@ -1,0 +1,48 @@
+#!/bin/sh
+set -e
+
+repo="superhac/vpinos-deb-repo"
+api_url="https://api.github.com/repos/${repo}/releases/latest"
+
+workdir=$(mktemp -d)
+cd "$workdir"
+
+curl -fsSL "$api_url" -o release.json
+
+for pkg in vpinball vpinfe; do
+    deb_url=$(jq -r --arg pkg "$pkg" \
+        '.assets[] | select(.name | startswith($pkg) and endswith(".deb")) | .browser_download_url' \
+        release.json)
+    sha_url=$(jq -r --arg pkg "$pkg" \
+        '.assets[] | select(.name | startswith($pkg) and endswith(".deb.sha256")) | .browser_download_url' \
+        release.json)
+
+    if [ -z "$deb_url" ] || [ -z "$sha_url" ]; then
+        echo "0100-install-vpinos-debs: no $pkg .deb/.sha256 asset found in latest release" >&2
+        exit 1
+    fi
+
+    deb_file=$(basename "$deb_url")
+    sha_file=$(basename "$sha_url")
+
+    curl -fsSL "$deb_url" -o "$deb_file"
+    curl -fsSL "$sha_url" -o "$sha_file"
+
+    # Compare hash values directly rather than `sha256sum -c`: the
+    # .sha256 sidecar's recorded filename doesn't always match the
+    # actual uploaded asset name (e.g. vpinball's sidecar references
+    # the dpkg version string with a literal '~', but the uploaded
+    # asset itself has that '~' replaced with '.'), so filename-based
+    # verification fails even when the hash itself is fine.
+    expected=$(awk '{print $1}' "$sha_file")
+    actual=$(sha256sum "$deb_file" | awk '{print $1}')
+    if [ "$expected" != "$actual" ]; then
+        echo "0100-install-vpinos-debs: checksum mismatch for $deb_file" >&2
+        exit 1
+    fi
+done
+
+apt-get install -y ./vpinball_*.deb ./vpinfe_*.deb
+
+cd /
+rm -rf "$workdir"

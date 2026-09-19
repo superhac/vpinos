@@ -1,0 +1,92 @@
+{
+    "Info": {
+        "IPDBId": "28",
+        "Title": "Air Aces",
+        "Manufacturer": "Bally",
+        "Year": 1975,
+        "Type": "EM",
+        "Themes": [
+            "Adventure",
+            "Aviation",
+            "Combat"
+        ],
+        "VPSId": "ngXHaZwR",
+        "Authors": [
+            "Updon/Bord/Scottacus"
+        ],
+        "Rom": "airaces_1974",
+        "PinballPrimerTut": "https://pinballprimer.github.io/airaces_G420v.html"
+    },
+    "User": {
+        "Rating": 0,
+        "Favorite": 0,
+        "LastRun": null,
+        "StartCount": 0,
+        "RunTime": 0,
+        "Tags": [],
+        "FrontendDOFEvent": ""
+    },
+    "VPXFile": {
+        "filename": "Air Aces (Bally 1975).vpx",
+        "filehash": "51124bf805d2e03620bcbc52c2e9cd97bb5da3036c29de576305644f7ece5748",
+        "version": "2.0",
+        "releaseDate": "September 2018",
+        "saveDate": "",
+        "saveRev": "",
+        "manufacturer": "",
+        "year": "",
+        "type": "",
+        "vbsHash": "08360af3ee981aecdd47475e85003e15584febce0e69b64f8634c8d5b1112a91",
+        "rom": "airaces_1974",
+        "detectnfozzy": false,
+        "detectfleep": false,
+        "detectssf": false,
+        "detectlut": false,
+        "detectscorebit": false,
+        "detectfastflips": false,
+        "detectflex": false
+    },
+    "VPinFE": {
+        "deletedNVRamOnClose": false,
+        "altlauncher": "",
+        "alttitle": "",
+        "altvpsid": ""
+    },
+    "Medias": {
+        "bg": {
+            "Source": "vpinmediadb",
+            "Path": "bg.png",
+            "MD5Hash": "8df84df81ebbb96ba6d3cb98ed8bb25c"
+        },
+        "dmd": {
+            "Source": "vpinmediadb",
+            "Path": "dmd.png",
+            "MD5Hash": "6d6ad708d5fe9b49da12f899c0a99bf7"
+        },
+        "wheel": {
+            "Source": "vpinmediadb",
+            "Path": "wheel.png",
+            "MD5Hash": "02b31b9a7b6a8aa6a83bba30dea9a5be"
+        },
+        "cab": {
+            "Source": "vpinmediadb",
+            "Path": "cab.png",
+            "MD5Hash": "c77498cb796bc0619aa5b7557b8fe933"
+        },
+        "table": {
+            "Source": "vpinmediadb",
+            "Path": "table.png",
+            "MD5Hash": "e010cef556579e4159f855a0cd3df269"
+        },
+        "flyer": {
+            "Source": "vpinmediadb",
+            "Path": "flyer.png",
+            "MD5Hash": "0333ba08a094ec24e4e289f112f1555e"
+        },
+        "table_video": {
+            "Source": "vpinmediadb",
+            "Path": "table.mp4",
+            "MD5Hash": "92a73b62cebf1025ea12f9c5c9dbd980"
+        }
+    }
+}
