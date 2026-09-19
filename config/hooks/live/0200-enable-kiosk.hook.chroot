@@ -9,12 +9,20 @@ systemctl enable seatd.service
 systemctl enable NetworkManager.service
 systemctl enable vpinos-hosts.service
 
+# includes.chroot doesn't reliably give files the right ownership/mode:
+# mode comes through as-is from the (unprivileged) build host, and
+# ownership is inconsistent -- most files land root:root, but
+# /etc/os-release was confirmed to come through as the build host's uid,
+# which is `vpinos` inside the image (i.e. writable by the kiosk user).
+# So anything where it matters is set explicitly here rather than trusted.
+#
 # sudoers.d files are silently ignored by sudo unless they're exactly
-# root:root 0440 -- includes.chroot copies this file with whatever
-# ownership/perms it had on the (unprivileged) build host, so fix it
-# explicitly here rather than trust that.
+# root:root 0440.
 chown root:root /etc/sudoers.d/vpinos
 chmod 0440 /etc/sudoers.d/vpinos
+
+chown root:root /etc/os-release
+chmod 0644 /etc/os-release
 
 # vpinball/vpinfe/Chrome now run as `vpinos` (non-root), but launch.sh/
 # vpinos-menu.sh write to these via `>>`, and /var/log is root:root

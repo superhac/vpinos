@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+# vpinball and vpinfe come from the signed apt repository published by
+# github.com/superhac/vpinos-repo (see /etc/apt/sources.list.d/vpinos.list,
+# shipped via includes.chroot). Installed here rather than from the
+# package list because includes.chroot content -- the source line and
+# its signing key -- is only copied into the image after the package-list
+# stage, so the repository doesn't exist yet when that stage runs.
+#
+# Ownership/mode set explicitly: includes.chroot gives files whatever
+# mode they had on the build host (0664 here), and ownership is not
+# reliably root (confirmed: /etc/os-release came through as the build
+# host's uid, which is `vpinos` inside the image). An apt trust anchor
+# and the directory holding it must not be writable by the unprivileged
+# kiosk user.
+chown root:root /etc/apt/keyrings /etc/apt/sources.list.d \
+  /etc/apt/keyrings/vpinos.asc /etc/apt/sources.list.d/vpinos.list
+chmod 0755 /etc/apt/keyrings /etc/apt/sources.list.d
+chmod 0644 /etc/apt/keyrings/vpinos.asc /etc/apt/sources.list.d/vpinos.list
+
+apt-get update
+apt-get install -y vpinball vpinfe

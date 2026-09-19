@@ -1,0 +1,6 @@
+# VPinOS packages (vpinball, vpinfe) -- signed flat apt repository
+# published by github.com/superhac/vpinos-repo. Kept in the image, not
+# just used at build time, so an installed system updates with plain
+# `sudo apt update && sudo apt upgrade`. signed-by scopes the key below
+# to this one source only.
+deb [signed-by=/etc/apt/keyrings/vpinos.asc] https://github.com/superhac/vpinos-repo/releases/download/apt ./

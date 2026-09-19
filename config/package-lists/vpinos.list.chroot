@@ -66,13 +66,11 @@ network-manager
 # future autoremove sweep -- same as every other package in this list.
 sudo
 
-# fetching prebuilt vpinball/vpinfe .deb packages at build time from
-# github.com/superhac/vpinos-deb-repo (see
-# 0100-install-vpinos-debs.hook.chroot) -- their own runtime deps are
-# pulled in automatically by `apt install ./*.deb`, so no compiler
-# toolchain or -dev headers are needed here anymore (Option B, not A)
+# curl: used by 0150-install-chrome.hook.chroot to fetch Google's .deb
+# (vpinball/vpinfe themselves come from the VPinOS apt repository, see
+# 0100-install-vpinos-packages.hook.chroot -- their runtime deps resolve
+# from the normal Debian mirrors, so no toolchain or -dev headers here)
 curl
-jq
 
 # Installer (live-then-install, like Mint/MX). calamares-settings-debian:
 # Debian's own official branding/config module (used by Debian's own
