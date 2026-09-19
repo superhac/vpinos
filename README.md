@@ -14,7 +14,20 @@
 <p align="center">
   <a href="../../actions/workflows/build-iso.yml"><img src="../../actions/workflows/build-iso.yml/badge.svg" alt="Build VPinOS ISO"></a>
   <a href="../../releases"><img src="https://img.shields.io/badge/download-latest%20release-4aa8ff" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/status-beta-orange" alt="Status: beta">
 </p>
+
+<p align="center">
+  <a href="https://youtu.be/APbAikFzutk"><strong>Watch the video on YouTube</strong></a>
+</p>
+
+> [!WARNING]
+> **VPinOS is in beta.** It works end to end (boot, launch, install), but it
+> is under active development: expect rough edges, breaking changes between
+> releases, and features that are still placeholders (the console menu, for
+> one). Don't rely on it for anything you can't reinstall, keep backups of
+> your tables and settings, and please
+> [report problems](../../issues).
 
 ---
 
@@ -182,7 +195,7 @@ are not committed.
 
 ## Status
 
-Early and actively developed. The build, live boot, launch path
+**Beta.** Early and actively developed. The build, live boot, launch path
 (weston &rarr; vpinball / vpinfe) and installer are working end to end.
 Still ahead: booting straight into the frontend instead of a console menu,
 persistence for the live medium, and narrowing GPU/firmware support once the
