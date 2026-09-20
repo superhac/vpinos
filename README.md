@@ -41,8 +41,8 @@ as possible:
 
 - **Display:** [weston](https://wayland.freedesktop.org/) as the compositor,
   with the launched program as its only Wayland client.
-- **Graphics:** Mesa Vulkan drivers (AMD / Intel), so VPinball's BGFX
-  renderer runs with a real GPU.
+- **Graphics:** Mesa Vulkan drivers (AMD, Intel, NVIDIA via NVK), so
+  VPinball's BGFX renderer runs with a real GPU.
 - **Apps:** `vpinball` and `vpinfe` (a cabinet frontend/launcher), plus
   Google Chrome for vpinfe's local UI.
 - **Installer:** the [Calamares](https://calamares.io/) installer, branded
@@ -118,8 +118,14 @@ Prebuilt ISOs are published on the
 
 ### Requirements
 
-- x86-64 PC with a GPU supported by Mesa's Vulkan drivers (**AMD or Intel**).
-  NVIDIA needs its proprietary driver, which is not included yet.
+- x86-64 PC with a Vulkan-capable GPU. VPinOS uses only the **open-source
+  Mesa drivers** &mdash; no proprietary AMD or NVIDIA drivers &mdash; and
+  they are all included, so no driver install is needed:
+  - **AMD** &mdash; Mesa RADV
+  - **Intel** &mdash; Mesa Intel Vulkan
+  - **NVIDIA** &mdash; the open-source NVK driver (Mesa) with NVIDIA's GPU
+    firmware, for Turing (RTX 16/20-series) and newer cards. Not yet tested
+    on real NVIDIA hardware.
 - The installer sets up a **UEFI** boot (GRUB EFI). Installing onto a
   BIOS-only machine has not been tested.
 - A network connection is needed to update, but not to run.

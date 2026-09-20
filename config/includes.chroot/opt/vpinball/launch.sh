@@ -163,4 +163,10 @@ chmod 1777 /tmp/.X11-unix 2>/dev/null || true
 # client's output above. Capturing it separately since weston's own
 # diagnostics (e.g. about how it's handling a client's surface) are a
 # distinct signal from the client's.
-exec /usr/bin/weston --xwayland --config=/etc/vpinos/weston.ini >>/var/log/vpinos-weston.log 2>&1
+#
+# The installer gets its own config (windowed desktop-shell) because
+# kiosk-shell would stretch Calamares to the full output -- see
+# /etc/vpinos/weston-installer.ini.
+weston_config=/etc/vpinos/weston.ini
+[ "$client_name" = "installer" ] && weston_config=/etc/vpinos/weston-installer.ini
+exec /usr/bin/weston --xwayland --config="$weston_config" >>/var/log/vpinos-weston.log 2>&1
