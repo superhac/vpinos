@@ -51,6 +51,15 @@ openssh-server
 # Decisions).
 network-manager
 
+# systemd-timesyncd: NTP clock sync. Nothing in the image set the clock
+# before this -- it just trusted the machine's hardware clock. If that
+# was wrong (commonly: RTC holding local time, or a dead CMOS battery),
+# `apt update` failed with "Release file ... is not valid yet / Not live
+# until <time>" because the signed InRelease files are dated in the
+# clock's future. Installed by apt's postinst, which enables it, so it
+# syncs as soon as NetworkManager brings the network up.
+systemd-timesyncd
+
 # sudo: never listed here before -- it was only ever present because
 # live-config transitively pulls it in (needed for live-config's own
 # 0040-sudo component, which grants the live `user` account passwordless

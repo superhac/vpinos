@@ -125,7 +125,15 @@ Prebuilt ISOs are published on the
   - **Intel** &mdash; Mesa Intel Vulkan
   - **NVIDIA** &mdash; the open-source NVK driver (Mesa) with NVIDIA's GPU
     firmware, for Turing (RTX 16/20-series) and newer cards. Not yet tested
-    on real NVIDIA hardware.
+    on real NVIDIA hardware. Older NVIDIA cards (Kepler, Maxwell, Pascal
+    &mdash; e.g. Quadro K-series, GTX 900/10-series) have no Vulkan driver
+    here: the kernel's `nouveau` driver still runs the display, but Vulkan
+    falls back to software (see below). Whether OpenGL on those cards is
+    usable for vpinball is untested.
+- **How to tell if your GPU is being used:** run `vulkaninfo --summary`. If
+  the device is `llvmpipe` (or `lavapipe`), Vulkan is falling back to
+  software rendering on the CPU &mdash; the GPU isn't supported, and it will
+  be far too slow for pinball.
 - The installer sets up a **UEFI** boot (GRUB EFI). Installing onto a
   BIOS-only machine has not been tested.
 - A network connection is needed to update, but not to run.
