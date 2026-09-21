@@ -9,4 +9,4 @@
 # interactive prompts. Scoped to launch.sh specifically (not blanket
 # NOPASSWD: ALL) so a real password is still required for anything else
 # run via sudo on an installed system.
-%sudo ALL=(ALL) NOPASSWD: /opt/vpinball/launch.sh
+%sudo ALL=(ALL) NOPASSWD: /usr/local/bin/launch.sh

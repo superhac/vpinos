@@ -27,24 +27,24 @@ while true; do
     case "$choice" in
         1)
             echo "$(date -Is): menu: selected option 1 (vpinball)" >>/var/log/vpinos-menu.log
-            /opt/vpinball/launch.sh vpinball \
+            /usr/local/bin/launch.sh vpinball \
                 /opt/vpinball/VPinballX_BGFX -play /opt/vpinball/assets/exampleTable.vpx
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
         2)
             echo "$(date -Is): menu: selected option 2 (vpinfe)" >>/var/log/vpinos-menu.log
-            /opt/vpinball/launch.sh vpinfe /opt/vpinfe/vpinfe
+            /usr/local/bin/launch.sh vpinfe /opt/vpinfe/vpinfe
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
         3)
             echo "$(date -Is): menu: selected option 3 (chrome debug)" >>/var/log/vpinos-menu.log
-            /opt/vpinball/launch.sh chrome /usr/bin/google-chrome \
+            /usr/local/bin/launch.sh chrome /usr/bin/google-chrome \
                 --kiosk --enable-logging=stderr --vmodule='*ozone*=1,*wayland*=1' about:blank
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
         4)
             echo "$(date -Is): menu: selected option 4 (calamares installer)" >>/var/log/vpinos-menu.log
-            sudo /opt/vpinball/launch.sh installer /usr/bin/calamares
+            sudo /usr/local/bin/launch.sh installer /usr/bin/calamares
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
         q|Q)

@@ -1,7 +1,12 @@
 #!/bin/sh
 set -e
 
-chmod +x /opt/vpinball/launch.sh
+# launch.sh is run as root via `sudo` (installer menu option, passwordless
+# per /etc/sudoers.d/vpinos), so it must be root-owned and NOT writable by
+# the kiosk user or group -- otherwise `vpinos` could rewrite it and gain
+# root. includes.chroot doesn't set ownership/mode reliably, so set both here.
+chown root:root /usr/local/bin/launch.sh
+chmod 0755 /usr/local/bin/launch.sh
 chmod +x /opt/vpinball/vpinos-menu.sh
 ln -sf /opt/vpinball/vpinos-menu.sh /usr/local/bin/vpinos-menu
 systemctl set-default multi-user.target
@@ -23,6 +28,12 @@ chmod 0440 /etc/sudoers.d/vpinos
 
 chown root:root /etc/os-release
 chmod 0644 /etc/os-release
+
+# Root-executed systemd drop-in (ssh host key generation): must not be
+# writable by the kiosk user.
+chown -R root:root /etc/systemd/system/ssh.service.d
+chmod 0755 /etc/systemd/system/ssh.service.d
+chmod 0644 /etc/systemd/system/ssh.service.d/vpinos-hostkeys.conf
 
 # vpinball/vpinfe/Chrome now run as `vpinos` (non-root), but launch.sh/
 # vpinos-menu.sh write to these via `>>`, and /var/log is root:root
