@@ -12,6 +12,7 @@
 /cache/
 /.build/
 /local/
+/.lock
 
 # Stray build byproducts if a build is interrupted before its
 # `dist/`-move step runs

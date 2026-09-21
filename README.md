@@ -98,7 +98,7 @@ Prebuilt ISOs are published on the
   version stamped into the image) is pushed. The `Build VPinOS ISO` GitHub
   Actions workflow builds the image from a clean checkout and attaches it.
 - Each release contains:
-  - `live-image-amd64.hybrid.iso` &mdash; the image (roughly 1.8&nbsp;GB)
+  - `live-image-amd64.hybrid.iso` &mdash; the image (roughly 2&nbsp;GB)
   - `live-image-amd64.packages` &mdash; every package and version in the image
   - `live-image-amd64.contents` / `.files` &mdash; the full file listing
 - Pushes to `main` and manual runs build the image and upload it as a

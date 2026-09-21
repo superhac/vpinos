@@ -1,0 +1,27 @@
+#!/bin/sh
+set -e
+
+# live-build's chroot_firmware stage (LB_FIRMWARE_CHROOT=true, the default)
+# explicitly schedules every firmware package it finds in the archive, not
+# just what `firmware-linux` recommends. These three are large and useless
+# on a pinball cabinet:
+#   firmware-netronome             Agilio SmartNIC server network cards (141 MB)
+#   firmware-nvidia-tesla-535-gsp  GSP firmware for NVIDIA's proprietary Tesla
+#                                  datacenter driver -- not used by nouveau/NVK,
+#                                  which uses firmware-nvidia-graphics (kept) (59 MB)
+#   firmware-marvell-prestera      Ethernet switch ASICs (59 MB)
+#
+# Blocking them with an apt pin does NOT work: a package named explicitly on
+# the install line with Pin-Priority -1 makes the whole install fail ("has
+# no installation candidate"). So they are installed, then purged here.
+#
+# The initrd must be regenerated afterwards: initramfs-tools bundles the
+# firmware for included drivers (MODULES=most) when the kernel package is
+# installed, and the initrd ships twice in the ISO (/live/ and /boot inside
+# the squashfs). Purging alone would leave ~35 MB of Netronome firmware in
+# both copies.
+apt-get purge -y firmware-netronome firmware-nvidia-tesla-535-gsp firmware-marvell-prestera
+
+# "Possible missing firmware ... for module nfp" warnings are expected and
+# harmless (no such hardware).
+update-initramfs -u -k all
