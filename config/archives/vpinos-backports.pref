@@ -1,0 +1,13 @@
+# Prefer trixie-backports for the packages needed to run current GPUs
+# (AMD RDNA4 e.g. RX 9060 XT needs a 6.14+ kernel, a recent Mesa for RADV,
+# and recent AMD GPU firmware -- none of which trixie ships). Backports are
+# NotAutomatic (priority 100) by default, so without this file nothing
+# would ever be installed from them. `src:` pins every binary package
+# built from that source package, so related packages stay in step.
+#
+# Plain .pref (not .pref.chroot): live-build keeps it in the final image,
+# so installed systems keep following backports for these packages on
+# `apt upgrade`. Everything not listed here stays on trixie.
+Package: src:linux src:linux-signed-amd64 src:mesa src:firmware-nonfree
+Pin: release n=trixie-backports
+Pin-Priority: 900

@@ -60,6 +60,13 @@ network-manager
 # syncs as soon as NetworkManager brings the network up.
 systemd-timesyncd
 
+# python3: general-purpose interpreter for scripting/maintenance on the
+# cabinet, in both the live session and the installed system (the
+# installed system is a copy of this same filesystem). Listed explicitly
+# so apt marks it manually installed and the installer's post-install
+# `autoremove` can't sweep it away.
+python3
+
 # sudo: never listed here before -- it was only ever present because
 # live-config transitively pulls it in (needed for live-config's own
 # 0040-sudo component, which grants the live `user` account passwordless

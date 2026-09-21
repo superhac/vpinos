@@ -39,14 +39,17 @@ a single hybrid ISO. It is **not** a general-purpose desktop. The whole point
 is a cabinet that goes from power-on to pinball with as little OS in the way
 as possible:
 
+- **Base:** Debian trixie with `trixie-backports` enabled. The **Linux 7.1
+  kernel**, a current **Mesa (26.1)** and current **AMD GPU firmware** come
+  from backports so recent GPUs work out of the box (see
+  [Requirements](#requirements)); everything else is stock trixie.
 - **Display:** [weston](https://wayland.freedesktop.org/) as the compositor,
   with the launched program as its only Wayland client.
-- **Graphics:** Mesa Vulkan drivers (AMD, Intel, NVIDIA via NVK), so
-  VPinball's BGFX renderer runs with a real GPU.
+- **Graphics:** open-source Mesa Vulkan drivers (AMD, Intel, NVIDIA via
+  NVK) on the Linux 7.1 kernel, so VPinball's BGFX renderer runs with a
+  real GPU.
 - **Apps:** `vpinball` and `vpinfe` (a cabinet frontend/launcher), plus
   Google Chrome for vpinfe's local UI.
-- **Installer:** the [Calamares](https://calamares.io/) installer, branded
-  for VPinOS, to put it on a cabinet's disk.
 - **Account:** one hardcoded appliance user, `vpinos` (password `vpinos`),
   in the `video`, `input`, `audio`, `render` and `sudo` groups. The apps run
   as this user, not as root.
@@ -118,18 +121,22 @@ Prebuilt ISOs are published on the
 
 ### Requirements
 
-- x86-64 PC with a Vulkan-capable GPU. VPinOS uses only the **open-source
-  Mesa drivers** &mdash; no proprietary AMD or NVIDIA drivers &mdash; and
-  they are all included, so no driver install is needed:
+- x86-64 PC with a Vulkan-capable GPU. The image ships the **Linux 7.1
+  kernel, Mesa 26.1 and current AMD GPU firmware from Debian's
+  trixie-backports** (trixie's own 6.12 kernel and Mesa 25.0 are too old for
+  the newest cards). VPinOS uses only the **open-source Mesa drivers**
+  &mdash; no proprietary AMD or NVIDIA drivers &mdash; and they are all
+  included, so no driver install is needed:
   - **AMD** &mdash; Mesa RADV
   - **Intel** &mdash; Mesa Intel Vulkan
   - **NVIDIA** &mdash; the open-source NVK driver (Mesa) with NVIDIA's GPU
     firmware, for Turing (RTX 16/20-series) and newer cards. Not yet tested
     on real NVIDIA hardware. Older NVIDIA cards (Kepler, Maxwell, Pascal
-    &mdash; e.g. Quadro K-series, GTX 900/10-series) have no Vulkan driver
-    here: the kernel's `nouveau` driver still runs the display, but Vulkan
-    falls back to software (see below). Whether OpenGL on those cards is
-    usable for vpinball is untested.
+    &mdash; e.g. Quadro K-series, GTX 900/10-series) are not known to have a
+    working Vulkan driver here (untested with the newer Mesa): the kernel's
+    `nouveau` driver still runs the display, but Vulkan may fall back to
+    software (see below). Whether OpenGL on those cards is usable for
+    vpinball is untested.
 - **How to tell if your GPU is being used:** run `vulkaninfo --summary`. If
   the device is `llvmpipe` (or `lavapipe`), Vulkan is falling back to
   software rendering on the CPU &mdash; the GPU isn't supported, and it will
@@ -151,8 +158,26 @@ The repository's source and public key are part of the image, so on an
 sudo apt update && sudo apt upgrade
 ```
 
-picks up new vpinball / vpinfe releases (and Debian security updates). A newly
+picks up new vpinball / vpinfe releases and Debian security updates. A newly
 built ISO always contains whatever is currently published there.
+
+### Backports (kernel, Mesa, GPU firmware)
+
+The image (live and installed) has `trixie-backports` enabled alongside
+`trixie`, `trixie-updates` and `trixie-security`, all with the
+`main contrib non-free non-free-firmware` areas. An apt preference
+(`/etc/apt/preferences.d/vpinos-backports.pref`) makes the **kernel, Mesa and
+GPU firmware** follow backports, so `sudo apt upgrade` on an installed system
+brings newer versions of those as backports publishes them. Notes:
+
+- **Reboot after a kernel update.** The previous kernel stays installed and
+  can be chosen from the GRUB menu if the new one misbehaves.
+- Everything else stays on trixie. Backports are opt-in in Debian, so to take
+  any other package from there, ask for it explicitly:
+  `sudo apt install -t trixie-backports <package>`.
+- Because those packages track backports, kernel/Mesa updates can change GPU
+  behavior between releases &mdash; if something regresses after an upgrade,
+  boot the older kernel from GRUB and report it.
 
 ## Security notes
 
@@ -176,6 +201,7 @@ docker run --rm --ulimit nofile=65536:65536 -v "$PWD:/work" -w /work vpinos-buil
     --architectures amd64 \
     --binary-images iso-hybrid \
     --archive-areas "main contrib non-free non-free-firmware" \
+    --backports true \
     --bootappend-live "boot=live components quiet splash username=vpinos"
 
 # Fix ownership of the generated config only -- never `chown -R` the whole
@@ -198,6 +224,7 @@ this same sequence.
 | Path | What it is |
 |------|------------|
 | `config/package-lists/` | Debian packages installed into the image |
+| `config/archives/` | apt preferences: kernel, Mesa and AMD firmware come from trixie-backports |
 | `config/hooks/live/` | Scripts run inside the image at build time (user creation, branding, installing vpinball/vpinfe, enabling services) |
 | `config/includes.chroot/` | Files copied verbatim into the image: the launcher and menu under `/opt/vpinball/`, weston and systemd config, apt source and key, Calamares branding, `os-release` |
 | `config/bootloaders/` | Boot splash and GRUB background artwork |
