@@ -41,8 +41,8 @@ chmod 0644 /etc/systemd/system/ssh.service.d/vpinos-hostkeys.conf
 # exists and is writable by it, not create a new one there. Root
 # (the installer, still sudo'd) can always write regardless of
 # ownership, so owning these by vpinos works for both.
-touch /var/log/vpinos-launch.log /var/log/vpinos-weston.log /var/log/vpinos-menu.log
-chown vpinos:vpinos /var/log/vpinos-launch.log /var/log/vpinos-weston.log /var/log/vpinos-menu.log
+touch /var/log/vpinos-launch.log /var/log/vpinos-weston.log /var/log/vpinos-menu.log /var/log/vpinos-vpxconfig.log
+chown vpinos:vpinos /var/log/vpinos-launch.log /var/log/vpinos-weston.log /var/log/vpinos-menu.log /var/log/vpinos-vpxconfig.log
 
 # No systemd service for weston itself -- boot goes to a normal console.
 # Run `vpinos-menu` by hand to bring up the (crude, placeholder) menu;

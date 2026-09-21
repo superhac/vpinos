@@ -83,8 +83,13 @@ After login you land on a plain console. Run `vpinos-menu`:
 2) Launch VPinFE (Frontend)
 3) Launch Chrome only (debug)
 4) Launch Installer (Calamares)
+5) Launch VPXConfig (Configuration)
 q) Quit to shell
 ```
+
+Option 5 starts **VPXConfig**, a configuration tool with a web interface: the
+menu starts its local server (`127.0.0.1:1111`, this machine only), opens it
+in a fullscreen Chrome, and stops the server as soon as you close the browser.
 
 The menu is a deliberate placeholder to prove out the launch path; booting
 straight into the frontend is still to come.
@@ -147,7 +152,7 @@ Prebuilt ISOs are published on the
 
 ## Updates: vpinball and vpinfe
 
-`vpinball` and `vpinfe` are not compiled into the image. They come from a
+`vpinball`, `vpinfe` and `vpxconfig` are not compiled into the image. They come from a
 signed apt repository, [`superhac/vpinos-repo`](https://github.com/superhac/vpinos-repo),
 whose packages are built in
 [`superhac/vpinos-deb-repo`](https://github.com/superhac/vpinos-deb-repo).
@@ -158,7 +163,7 @@ The repository's source and public key are part of the image, so on an
 sudo apt update && sudo apt upgrade
 ```
 
-picks up new vpinball / vpinfe releases and Debian security updates. A newly
+picks up new vpinball / vpinfe / vpxconfig releases and Debian security updates. A newly
 built ISO always contains whatever is currently published there.
 
 ### Backports (kernel, Mesa, GPU firmware)

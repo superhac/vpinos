@@ -20,4 +20,4 @@ chmod 0755 /etc/apt/keyrings /etc/apt/sources.list.d
 chmod 0644 /etc/apt/keyrings/vpinos.asc /etc/apt/sources.list.d/vpinos.list
 
 apt-get update
-apt-get install -y vpinball vpinfe
+apt-get install -y vpinball vpinfe vpxconfig
