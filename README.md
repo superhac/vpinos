@@ -85,12 +85,19 @@ e.g. for debugging — running `vpinos-menu` by hand brings it back):
 3) Launch Chrome only (debug)
 4) Launch Installer (Calamares)
 5) Launch VPXConfig (Configuration)
+6) Boot on startup: menu          (installed systems only)
 q) Quit to shell
 ```
 
 Option 5 starts **VPXConfig**, a configuration tool with a web interface: the
 menu starts its local server (`127.0.0.1:1111`, this machine only), opens it
 in a fullscreen Chrome, and stops the server as soon as you close the browser.
+
+Option 6 (installed systems only — not shown on the live image) lets you pick
+a program to launch automatically on boot instead of this menu, e.g. VPinFE
+for a cabinet that should go straight to the frontend. Picking `q` from that
+program (or it exiting for any other reason) always falls back to this menu,
+never a dead end.
 
 The menu is a deliberate placeholder to prove out the launch path; booting
 straight into the frontend is still to come.
@@ -244,6 +251,6 @@ are not committed.
 
 **Beta.** Early and actively developed. The build, live boot, launch path
 (weston &rarr; vpinball / vpinfe) and installer are working end to end.
-Still ahead: booting straight into the frontend instead of a console menu,
-persistence for the live medium, and narrowing GPU/firmware support once the
-target hardware is settled.
+Booting straight into the frontend on an installed cabinet is now
+opt-in (menu option 6). Still ahead: persistence for the live medium, and
+narrowing GPU/firmware support once the target hardware is settled.

@@ -20,5 +20,31 @@ case $- in
     *) return 2>/dev/null || exit 0 ;;
 esac
 if [ -z "$SSH_CONNECTION" ] && [ -t 0 ]; then
+    # /etc/vpinos/boot-mode ("menu" by default, baked into the image, or
+    # the name of a program below) picks what launches automatically
+    # before falling through to vpinos-menu -- same non-exec philosophy
+    # as this whole file: whatever runs here, control still falls through
+    # to the menu (and from there, "q", to a real shell) afterward, never
+    # a dead end. Set from vpinos-menu's own "Boot on startup" submenu
+    # (installed systems only -- see that script's is_installed check).
+    #
+    # To add a new boot-on-startup program: see the
+    # `manage-boot-programs` skill in notes/skills/ -- it walks through
+    # this case arm, the matching submenu entry in vpinos-menu.sh, the
+    # audit check, and the docs together, so they can't drift out of
+    # sync with each other.
+    case "$(cat /etc/vpinos/boot-mode 2>/dev/null)" in
+        vpinfe)
+            /usr/local/bin/launch.sh vpinfe /opt/vpinfe/vpinfe
+            ;;
+        menu | "")
+            ;;
+        *)
+            # Unrecognized value (corrupted file, or a mode a newer
+            # vpinos-menu wrote that this older profile script doesn't
+            # know yet) -- fail safe to just the menu, don't guess.
+            echo "$(date -Is): profile: unknown boot-mode '$(cat /etc/vpinos/boot-mode 2>/dev/null)', falling back to menu" >>/var/log/vpinos-menu.log
+            ;;
+    esac
     vpinos-menu
 fi

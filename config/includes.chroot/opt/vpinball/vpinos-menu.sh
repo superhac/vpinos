@@ -90,6 +90,67 @@ run_vpxconfig() {
     trap - INT TERM HUP
 }
 
+# /etc/vpinos/boot-mode is what /etc/profile.d/vpinos-menu.sh reads at
+# login to decide what to auto-launch before falling through to here.
+# Changing it only makes sense on an INSTALLED system -- a live session
+# never persists it across a reboot, and boot=live on the kernel cmdline
+# is the same mechanism live-config itself already uses to tell the two
+# apart (see notes/vpinos.md step 5), so it's precedented, not something
+# new. Option 6 (and its whole submenu) simply doesn't exist on a live
+# session -- not shown, not selectable, no renumbering of 1-5 either way.
+is_installed() {
+    ! grep -q 'boot=live' /proc/cmdline 2>/dev/null
+}
+
+# The list of available boot-on-startup programs lives here as a plain
+# case statement, not a data structure -- POSIX sh (this file's shebang)
+# has no arrays/associative arrays, and every other piece of this menu is
+# already a plain case statement, so this matches. To add a program here,
+# see the `manage-boot-programs` skill in notes/skills/ -- it walks
+# through this function, the matching case arm in
+# /etc/profile.d/vpinos-menu.sh, the audit check, and the docs together.
+boot_mode_submenu() {
+    while true; do
+        clear
+        cur=$(cat /etc/vpinos/boot-mode 2>/dev/null)
+        [ -z "$cur" ] && cur=menu
+        echo "=============================="
+        echo "      Boot on startup"
+        echo "=============================="
+        echo "Currently: $cur"
+        echo
+        echo "1) VPinOS menu (default)"
+        echo "2) VPinFE"
+        echo "q) Cancel, no change"
+        echo "=============================="
+        printf "Select an option: "
+        read -r bchoice
+        case "$bchoice" in
+            1)
+                echo "menu" > /etc/vpinos/boot-mode
+                echo "$(date -Is): menu: boot-mode set to menu" >>/var/log/vpinos-menu.log
+                echo "Will boot to the VPinOS menu on next startup."
+                sleep 2
+                return
+                ;;
+            2)
+                echo "vpinfe" > /etc/vpinos/boot-mode
+                echo "$(date -Is): menu: boot-mode set to vpinfe" >>/var/log/vpinos-menu.log
+                echo "Will boot straight to VPinFE on next startup."
+                sleep 2
+                return
+                ;;
+            q|Q)
+                return
+                ;;
+            *)
+                echo "Invalid option"
+                sleep 1
+                ;;
+        esac
+    done
+}
+
 while true; do
     clear
     echo "=============================="
@@ -100,6 +161,11 @@ while true; do
     echo "3) Launch Chrome only (debug)"
     echo "4) Launch Installer (Calamares)"
     echo "5) Launch VPXConfig (Configuration)"
+    if is_installed; then
+        cur=$(cat /etc/vpinos/boot-mode 2>/dev/null)
+        [ -z "$cur" ] && cur=menu
+        echo "6) Boot on startup: $cur"
+    fi
     echo "q) Quit to shell"
     echo "=============================="
     printf "Select an option: "
@@ -131,6 +197,14 @@ while true; do
         5)
             echo "$(date -Is): menu: selected option 5 (vpxconfig)" >>/var/log/vpinos-menu.log
             run_vpxconfig
+            ;;
+        6)
+            if is_installed; then
+                boot_mode_submenu
+            else
+                echo "Invalid option"
+                sleep 1
+            fi
             ;;
         q|Q)
             break
