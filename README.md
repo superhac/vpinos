@@ -65,7 +65,7 @@ and whether changes survive a reboot.
 | Storage               | Read-only image, changes held in RAM             | Normal read-write install                          |
 | Changes persist?      | **No** &mdash; everything resets on reboot       | Yes                                                |
 | Login                 | Console autologin as `vpinos` on tty1            | Console autologin as `vpinos` on tty1              |
-| Start the menu        | run `vpinos-menu`                                | run `vpinos-menu`                                  |
+| Start the menu        | automatic on login                               | automatic on login                                 |
 | `sudo`                | Passwordless (live session default)              | Asks for the `vpinos` password, except the launcher the menu uses |
 | Updating vpinball / vpinfe | Not useful (lost at reboot) &mdash; use a newer ISO | `sudo apt update && sudo apt upgrade`          |
 | Good for              | Trying it, hardware checks, running the installer | Daily use on the cabinet                          |
@@ -76,7 +76,8 @@ the menu and follow the prompts (language, keyboard, partitioning, summary).
 
 ### The menu
 
-After login you land on a plain console. Run `vpinos-menu`:
+The menu launches automatically on login (`q` drops to a normal shell,
+e.g. for debugging — running `vpinos-menu` by hand brings it back):
 
 ```
 1) Launch VPinball (Example Table)

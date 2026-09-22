@@ -29,6 +29,12 @@ chmod 0440 /etc/sudoers.d/vpinos
 chown root:root /etc/os-release
 chmod 0644 /etc/os-release
 
+# Auto-launches vpinos-menu on every interactive console login (see the
+# file's own comment) -- root-owned so the kiosk user can't disable its
+# own auto-launch or point it at something else.
+chown root:root /etc/profile.d/vpinos-menu.sh
+chmod 0644 /etc/profile.d/vpinos-menu.sh
+
 # Root-executed systemd drop-in (ssh host key generation): must not be
 # writable by the kiosk user.
 chown -R root:root /etc/systemd/system/ssh.service.d
