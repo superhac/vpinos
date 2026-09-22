@@ -207,7 +207,7 @@ docker run --rm --ulimit nofile=65536:65536 -v "$PWD:/work" -w /work vpinos-buil
     --binary-images iso-hybrid \
     --archive-areas "main contrib non-free non-free-firmware" \
     --backports true \
-    --bootappend-live "boot=live components quiet splash username=vpinos"
+    --bootappend-live "boot=live components username=vpinos"
 
 # Fix ownership of the generated config only -- never `chown -R` the whole
 # project: it corrupts cache/bootstrap and the built image ends up with its

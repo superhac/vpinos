@@ -164,9 +164,14 @@ chmod 1777 /tmp/.X11-unix 2>/dev/null || true
 # diagnostics (e.g. about how it's handling a client's surface) are a
 # distinct signal from the client's.
 #
-# The installer gets its own config (windowed desktop-shell) because
-# kiosk-shell would stretch Calamares to the full output -- see
-# /etc/vpinos/weston-installer.ini.
+# The installer and vpxconfig get the windowed config (desktop-shell)
+# instead of the kiosk one: kiosk-shell forces every toplevel fullscreen
+# with no window chrome regardless of what the app itself asks for (that's
+# what stretched Calamares before it got this same treatment), which is
+# right for vpinball/vpinfe but wrong for a config tool the user needs a
+# visible, obvious way to close. See /etc/vpinos/weston-installer.ini.
 weston_config=/etc/vpinos/weston.ini
-[ "$client_name" = "installer" ] && weston_config=/etc/vpinos/weston-installer.ini
+case "$client_name" in
+    installer | vpxconfig) weston_config=/etc/vpinos/weston-installer.ini ;;
+esac
 exec /usr/bin/weston --xwayland --config="$weston_config" >>/var/log/vpinos-weston.log 2>&1

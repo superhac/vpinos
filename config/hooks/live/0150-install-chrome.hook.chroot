@@ -22,15 +22,31 @@ rm -rf "$workdir"
 # update-alternatives symlink) with no flags of its own, and Chrome
 # defaults to the X11 Ozone platform -- confirmed directly: it fails
 # immediately with "Missing X server or $DISPLAY" since there's no X11
-# (or XWayland) here at all, only weston. Also running as root (which
-# everything in this image's launch chain does) without --no-sandbox is
-# a well-known Chrome failure on its own, on top of the Ozone issue --
-# --no-sandbox is safe here specifically because Chrome only ever
-# renders vpinfe's own local UI (served from 127.0.0.1), not arbitrary
-# untrusted web content. Replacing the update-alternatives symlink with
-# a wrapper is simplest: vpinfe keeps calling the same path, and gets
-# the right flags transparently, without needing changes on vpinfe's
-# own side.
+# (or XWayland) here at all, only weston. Replacing the
+# update-alternatives symlink with a wrapper is simplest: vpinfe keeps
+# calling the same path, and gets the right flags transparently, without
+# needing changes on vpinfe's own side.
+#
+# --no-sandbox REMOVED (was originally added when everything in this
+# launch chain still ran as root -- running as root without it is a
+# well-known Chrome failure on its own). Chrome now runs as the
+# non-root `vpinos` account for every current caller of this wrapper
+# (vpinfe, the menu's debug option, VPXConfig -- see step 5's
+# account-model section; only the installer runs as root, and it uses
+# calamares directly, never this wrapper), so the original reason is
+# gone. Confirmed safe to drop, not just assumed: the Chrome .deb's own
+# postinst installs /opt/google/chrome/chrome-sandbox setuid root
+# (-rwsr-xr-x root root, confirmed in the built image), which is what
+# Chrome's real (non---no-sandbox) sandbox needs, and the running
+# kernel allows unprivileged user namespaces
+# (/proc/sys/kernel/unprivileged_userns_clone is 1). Also removes a
+# real, user-visible downside: Chrome showed a permanent
+# "You are using an unsupported command-line flag: --no-sandbox.
+# Stability and security will suffer." infobar in every window while
+# it was set. Not yet re-tested against a real weston session --
+# theoretically sound, but if sandboxed Chrome fails to start for some
+# reason specific to this image, --no-sandbox is the first thing to
+# try reverting.
 #
 # --use-gl=swiftshader --enable-unsafe-swiftshader: with the
 # Ozone/sandbox issues fixed, Chrome ran with real, healthy-looking
@@ -72,7 +88,7 @@ wrapper_path=/opt/vpinball/google-chrome-wrapper.sh
 mkdir -p /opt/vpinball
 cat > "$wrapper_path" << WRAPPER
 #!/bin/sh
-exec "$real_chrome" --ozone-platform=wayland --no-sandbox --use-gl=swiftshader --enable-unsafe-swiftshader "\$@"
+exec "$real_chrome" --ozone-platform=wayland --use-gl=swiftshader --enable-unsafe-swiftshader "\$@"
 WRAPPER
 chmod +x "$wrapper_path"
 

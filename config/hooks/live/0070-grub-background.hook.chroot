@@ -36,6 +36,13 @@ sed "s/@VERSION@/${VERSION_ID}/g" /usr/share/vpinos/grub-installed-background.sv
 rm -f /usr/share/vpinos/grub-installed-background.svg
 rmdir /usr/share/vpinos 2>/dev/null || true
 
+# Show boot messages instead of a silent screen -- matches the live ISO's
+# own boot line (no "quiet splash" there either, see step 2/8). grub's
+# package postinst ships GRUB_CMDLINE_LINUX_DEFAULT="quiet" by default;
+# there is no Plymouth here for "splash" to hand off to anyway (see Not
+# yet scoped), so this only ever needed to drop "quiet".
+sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="quiet"$/GRUB_CMDLINE_LINUX_DEFAULT=""/' /etc/default/grub
+
 # GRUB_TERMINAL_OUTPUT=gfxterm is required, not optional -- confirmed
 # by reading /etc/grub.d/05_debian_theme directly: its
 # set_background_image() function checks GRUB_TERMINAL_OUTPUT for

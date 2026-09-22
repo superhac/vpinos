@@ -11,10 +11,10 @@
 # root required.
 
 # VPXConfig is a local web server (127.0.0.1:1111) driven from a browser:
-# start it, wait until it answers, run Chrome in kiosk mode on it as
-# launch.sh's client, and stop the server as soon as the browser closes
-# (launch.sh returns when its client exits). Bound to loopback only --
-# it can change system configuration, so it must never listen externally.
+# start it, wait until it answers, run Chrome as launch.sh's client on it,
+# and stop the server as soon as the browser closes (launch.sh returns when
+# its client exits). Bound to loopback only -- it can change system
+# configuration, so it must never listen externally.
 vpxconfig_port=1111
 vpxconfig_log=/var/log/vpinos-vpxconfig.log
 vpxconfig_pid=""
@@ -70,11 +70,21 @@ run_vpxconfig() {
         sleep 1
     done
 
+    # client_name "vpxconfig" (not "chrome"): that's what launch.sh matches
+    # on to pick the windowed weston config instead of the fullscreen kiosk
+    # one -- a config tool needs a visible, obvious way to close it, unlike
+    # vpinball/vpinfe/the debug Chrome option. --app=URL (not --kiosk) opens
+    # a plain app window with a title bar and close button instead of
+    # suppressing all window chrome; --start-maximized fills the screen
+    # anyway (a real maximize, not fullscreen -- the title bar/close button
+    # stay visible), which weston's desktop-shell (windowed config) is a
+    # normal xdg-shell compositor and should honor like any other.
+    #
     # Returns when the browser is closed; the server is stopped right
     # after, whatever the browser's exit status was.
-    /usr/local/bin/launch.sh chrome /usr/bin/google-chrome \
-        --kiosk --no-first-run --disable-session-crashed-bubble --noerrdialogs \
-        "http://127.0.0.1:$vpxconfig_port"
+    /usr/local/bin/launch.sh vpxconfig /usr/bin/google-chrome \
+        "--app=http://127.0.0.1:$vpxconfig_port" --start-maximized \
+        --no-first-run --disable-session-crashed-bubble --noerrdialogs
     echo "$(date -Is): menu: launch.sh (vpxconfig browser) exited $?" >>/var/log/vpinos-menu.log
     stop_vpxconfig
     trap - INT TERM HUP
