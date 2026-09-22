@@ -58,10 +58,36 @@ sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="quiet"$/GRUB_CMDLINE_LINUX_DEFAULT=""/' /
 # display. Appended, not overwritten -- /etc/default/grub already has
 # real defaults from the grub package's own postinst that shouldn't be
 # clobbered.
+# GRUB_GFXPAYLOAD_LINUX -- controls what video mode is left active when
+# GRUB jumps to the kernel (independent of GRUB_TERMINAL_OUTPUT/GRUB_GFXMODE
+# below, which only affect GRUB's own menu -- the background image is
+# unaffected either way). Left unset, an installed system boots to a black
+# screen with no visible kernel/systemd messages -- confirmed by reading
+# /etc/grub.d/10_linux directly: Debian's grub build hardcodes
+# gfxpayload_dynamic="0", and with GRUB_GFXPAYLOAD_LINUX unset that script
+# still emits `set gfxpayload=""` for the kernel handoff, and empty means
+# "keep the current graphics mode" (the 800x600 gfxterm mode set below),
+# not "switch to text". (The live ISO never hits this -- its own boot
+# files are generated separately by live-build and never read this file.)
+#
+# `text` fixed a black screen in VM testing (BIOS/VESA firmware) but did
+# NOT fix visible boot messages on one specific piece of real UEFI
+# hardware; `keep` was tried next on that same box -- also no difference.
+# To isolate the variable, this whole block (background + gfxterm) was
+# then disabled entirely for a diagnostic build -- STILL no difference on
+# that hardware (same "couple of lines then black" symptom with a
+# completely plain, unbranded GRUB menu). That rules VPinOS's own GRUB
+# theming out as the cause on that box; whatever's actually happening
+# there is unrelated to this file. Branding restored (kept at `keep`,
+# since neither value made any measurable difference either way) --
+# see notes/vpinos.md step 8/Open Decisions for that unresolved,
+# hardware-specific issue; don't re-chase it by changing settings here
+# again without new evidence.
 cat >> /etc/default/grub << 'EOF'
 
 # VPinOS branding (see 0070-grub-background.hook.chroot)
 GRUB_BACKGROUND="/boot/grub/vpinos-background.png"
 GRUB_GFXMODE=800x600
 GRUB_TERMINAL_OUTPUT=gfxterm
+GRUB_GFXPAYLOAD_LINUX=keep
 EOF

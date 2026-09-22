@@ -9,9 +9,22 @@
 # every boot (harmless to rewrite identical content each time) rather
 # than only if missing, in case anything else at runtime empties it
 # again.
+#
+# After=systemd-remount-fs.service -- found failing on a real installed
+# system via `sudo journalctl -b` (status=2/INVALIDARGUMENT, dash's exit
+# code for a failed output redirection): root boots `ro` (confirmed via
+# the kernel's own command line) and systemd-remount-fs.service is what
+# remounts it rw per fstab. DefaultDependencies=no (kept, so this stays
+# ordered only against network-pre.target, not the usual late target
+# chain) means nothing otherwise guarantees this runs after that remount,
+# so ExecStart could -- and did -- fire while /etc was still read-only.
+# systemd-remount-fs.service itself runs very early in sysinit.target
+# sequencing, well before network-pre.target, so this doesn't push
+# vpinos-hosts.service later than intended.
 [Unit]
 Description=VPinOS: ensure /etc/hosts has a working baseline
 DefaultDependencies=no
+After=systemd-remount-fs.service
 Before=network-pre.target
 Wants=network-pre.target
 
