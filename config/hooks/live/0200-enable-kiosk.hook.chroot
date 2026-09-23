@@ -7,8 +7,8 @@ set -e
 # root. includes.chroot doesn't set ownership/mode reliably, so set both here.
 chown root:root /usr/local/bin/launch.sh
 chmod 0755 /usr/local/bin/launch.sh
-chmod +x /opt/vpinball/vpinos-menu.sh
-ln -sf /opt/vpinball/vpinos-menu.sh /usr/local/bin/vpinos-menu
+chmod +x /usr/local/bin/vpinos-menu.sh
+ln -sf /usr/local/bin/vpinos-menu.sh /usr/local/bin/vpinos-menu
 systemctl set-default multi-user.target
 systemctl enable seatd.service
 systemctl enable NetworkManager.service

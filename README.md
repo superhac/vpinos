@@ -51,7 +51,8 @@ as possible:
 - **Apps:** `vpinball` and `vpinfe` (a cabinet frontend/launcher), plus
   Google Chrome for vpinfe's local UI.
 - **Account:** one hardcoded appliance user, `vpinos` (password `vpinos`),
-  in the `video`, `input`, `audio`, `render` and `sudo` groups. The apps run
+  in the `video`, `input`, `audio`, `render`, `dialout`, `plugdev` and
+  `sudo` groups. The apps run
   as this user, not as root.
 
 ## Live vs. installed
@@ -239,7 +240,7 @@ this same sequence.
 | `config/package-lists/` | Debian packages installed into the image |
 | `config/archives/` | apt preferences: kernel, Mesa and AMD firmware come from trixie-backports |
 | `config/hooks/live/` | Scripts run inside the image at build time (user creation, branding, installing vpinball/vpinfe, enabling services) |
-| `config/includes.chroot/` | Files copied verbatim into the image: the launcher (`/usr/local/bin/launch.sh`) and menu (`/opt/vpinball/`), weston and systemd config, apt source and key, Calamares branding, `os-release` |
+| `config/includes.chroot/` | Files copied verbatim into the image: the launcher and menu (`/usr/local/bin/`), weston and systemd config, apt source and key, Calamares branding, `os-release` |
 | `config/bootloaders/` | Boot splash and GRUB background artwork |
 | `Dockerfile` | The reproducible build environment |
 | `.github/workflows/build-iso.yml` | CI build and tag-triggered release |
