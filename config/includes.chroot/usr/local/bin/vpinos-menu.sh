@@ -95,8 +95,8 @@ run_vpxconfig() {
 # never persists it across a reboot, and boot=live on the kernel cmdline
 # is the same mechanism live-config itself already uses to tell the two
 # apart (see notes/vpinos.md step 5), so it's precedented, not something
-# new. Option 6 (and its whole submenu) simply doesn't exist on a live
-# session -- not shown, not selectable, no renumbering of 1-5 either way.
+# new. Option 7 (and its whole submenu) simply doesn't exist on a live
+# session -- not shown, not selectable, no renumbering of 1-6 either way.
 is_installed() {
     ! grep -q 'boot=live' /proc/cmdline 2>/dev/null
 }
@@ -155,15 +155,16 @@ while true; do
     echo "=============================="
     echo "            VPinOS"
     echo "=============================="
-    echo "1) Launch VPinball (Example Table)"
-    echo "2) Launch VPinFE (Frontend)"
-    echo "3) Launch Chrome only (debug)"
-    echo "4) Launch Installer (Calamares)"
-    echo "5) Launch VPXConfig (Configuration)"
+    echo "1) Monitor Detection"
+    echo "2) Launch VPinball (Example Table)"
+    echo "3) Launch VPinFE (Frontend)"
+    echo "4) Launch Chrome only (debug)"
+    echo "5) Launch Installer (Calamares)"
+    echo "6) Launch VPXConfig (Configuration)"
     if is_installed; then
         cur=$(cat /etc/vpinos/boot-mode 2>/dev/null)
         [ -z "$cur" ] && cur=menu
-        echo "6) Boot on startup: $cur"
+        echo "7) Boot on startup: $cur"
     fi
     echo "q) Quit to shell"
     echo "=============================="
@@ -172,32 +173,37 @@ while true; do
 
     case "$choice" in
         1)
-            echo "$(date -Is): menu: selected option 1 (vpinball)" >>/var/log/vpinos-menu.log
+            echo "$(date -Is): menu: selected option 1 (monitor detection)" >>/var/log/vpinos-menu.log
+            /usr/local/bin/launch.sh shell /usr/local/bin/vpinos-detect-monitors.py
+            echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
+            ;;
+        2)
+            echo "$(date -Is): menu: selected option 2 (vpinball)" >>/var/log/vpinos-menu.log
             /usr/local/bin/launch.sh vpinball \
                 /opt/vpinball/VPinballX_BGFX -play /opt/vpinball/assets/exampleTable.vpx
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
-        2)
-            echo "$(date -Is): menu: selected option 2 (vpinfe)" >>/var/log/vpinos-menu.log
+        3)
+            echo "$(date -Is): menu: selected option 3 (vpinfe)" >>/var/log/vpinos-menu.log
             /usr/local/bin/launch.sh vpinfe /opt/vpinfe/vpinfe
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
-        3)
-            echo "$(date -Is): menu: selected option 3 (chrome debug)" >>/var/log/vpinos-menu.log
+        4)
+            echo "$(date -Is): menu: selected option 4 (chrome debug)" >>/var/log/vpinos-menu.log
             /usr/local/bin/launch.sh chrome /usr/bin/google-chrome \
                 --kiosk --enable-logging=stderr --vmodule='*ozone*=1,*wayland*=1' about:blank
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
-        4)
-            echo "$(date -Is): menu: selected option 4 (calamares installer)" >>/var/log/vpinos-menu.log
+        5)
+            echo "$(date -Is): menu: selected option 5 (calamares installer)" >>/var/log/vpinos-menu.log
             sudo /usr/local/bin/launch.sh installer /usr/bin/calamares
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
-        5)
-            echo "$(date -Is): menu: selected option 5 (vpxconfig)" >>/var/log/vpinos-menu.log
+        6)
+            echo "$(date -Is): menu: selected option 6 (vpxconfig)" >>/var/log/vpinos-menu.log
             run_vpxconfig
             ;;
-        6)
+        7)
             if is_installed; then
                 boot_mode_submenu
             else
