@@ -58,6 +58,17 @@ chown vpinos:vpinos /var/log/vpinos-launch.log /var/log/vpinos-hyprland.log /var
 chown vpinos:vpinos /etc/vpinos/boot-mode
 chmod 0644 /etc/vpinos/boot-mode
 
+# Same reasoning as boot-mode above: vpinos-detect-monitors.py's Save
+# button rewrites the vpinos-workspace-monitors block in hyprland.conf
+# directly, as `vpinos`, no sudo -- not a privilege boundary, just a
+# user-facing display-layout choice, so vpinos ownership is correct
+# here too. hyprland-installer.conf is never written by anything, so it
+# stays root-owned like most other config.
+chown vpinos:vpinos /etc/vpinos/hyprland.conf
+chmod 0644 /etc/vpinos/hyprland.conf
+chown root:root /etc/vpinos/hyprland-installer.conf
+chmod 0644 /etc/vpinos/hyprland-installer.conf
+
 # No systemd service for Hyprland itself -- boot goes to a normal console
 # (auto-launching vpinos-menu, see /etc/profile.d/vpinos-menu.sh).
 # Picking a menu option runs launch.sh, which execs Hyprland directly

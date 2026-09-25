@@ -44,6 +44,13 @@ wayland-utils
 # (Aquamarine, broadly wlroots-compatible) implements that protocol.
 wlr-randr
 
+# python3-tk: Tk/Tcl bindings for python3's built-in tkinter -- used by
+# vpinos-detect-monitors.py's monitor-identification menu (real
+# clickable GUI buttons, not a terminal menu). Tk has no native Wayland
+# backend in trixie's version, so it runs over Xwayland (already
+# enabled in hyprland.conf) like Calamares does.
+python3-tk
+
 # input / audio
 alsa-utils
 
