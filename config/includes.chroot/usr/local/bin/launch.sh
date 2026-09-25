@@ -1,13 +1,19 @@
 #!/bin/sh
-# Starts weston directly in the foreground of the calling shell (via
-# `exec`, at the bottom -- inherits its tty/session properly, the way
-# systemd's ExecStart did) and launches a given client as weston's
-# client once the Wayland socket is up. Run directly from an
-# interactive shell (the `vpinos` user for vpinball/vpinfe/Chrome --
-# seatd's default config already grants `video`-group members DRM/seat
-# access, no root needed; still `sudo`'d for the installer specifically,
-# which genuinely needs root for partitioning -- see vpinos-menu.sh);
-# not a systemd service.
+# Starts Hyprland directly in the foreground of the calling shell (via
+# `exec`, at the bottom -- inherits its tty/session properly, matching
+# weston's old requirement and Hyprland's own documented launch method:
+# "going into a TTY and executing Hyprland", not a login manager -- see
+# `man hyprland`) and launches a given client as its client once the
+# Wayland socket is up. Run directly from an interactive shell (the
+# `vpinos` user for vpinball/vpinfe/Chrome -- seatd's default config
+# already grants DRM/seat access to `video`-group members, no root
+# needed; still `sudo`'d for the installer specifically, which genuinely
+# needs root for partitioning -- see vpinos-menu.sh); not a systemd
+# service. (Was weston until this was migrated to Hyprland -- see
+# notes/vpinos.md step 5 for why, and for what carried over unchanged:
+# this whole tty-session-instead-of-a-service architecture, the client
+# wait/log/kill-on-exit mechanics below, none of that is Hyprland-
+# specific, just the compositor binary and its config files changed.)
 #
 # Usage: launch.sh <name-for-logging> <command> [args...]
 #   e.g. launch.sh vpinball /opt/vpinball/VPinballX_BGFX -play /opt/vpinball/assets/exampleTable.vpx
@@ -34,10 +40,10 @@ export XDG_RUNTIME_DIR="$runtime_dir"
 
 log_file="/var/log/vpinos-launch.log"
 
-# Captured before `exec` replaces this process with weston -- `exec`
-# keeps the same PID, so this is weston's PID too, letting
-# launch_client (below) stop weston once its client exits.
-weston_pid=$$
+# Captured before `exec` replaces this process with Hyprland -- `exec`
+# keeps the same PID, so this is Hyprland's PID too, letting
+# launch_client (below) stop it once its client exits.
+compositor_pid=$$
 
 wait_for_glob() {
     # Polls for a glob pattern to match a real file, up to ~10s.
@@ -67,11 +73,11 @@ launch_client() {
 
     if [ "$client_name" = "installer" ]; then
         # calamares's Wayland support is unreliable -- confirmed
-        # directly, not a guess: even with QT_QPA_PLATFORM=wayland
-        # forced and qt6-wayland installed, its main window rendered
-        # fine under weston but its "Cancel Installation?" popup
-        # showed readable text with zero button/panel chrome (tried
-        # forcing QT_QUICK_CONTROLS_STYLE=Basic -- no change, tried
+        # directly under weston, not a guess: even with QT_QPA_PLATFORM=
+        # wayland forced and qt6-wayland installed, its main window
+        # rendered fine but its "Cancel Installation?" popup showed
+        # readable text with zero button/panel chrome (tried forcing
+        # QT_QUICK_CONTROLS_STYLE=Basic -- no change, tried
         # QT_QUICK_BACKEND=software -- see vpinos.md for the full
         # history), and a separate run crashed outright with a raw
         # Xlib "Cannot open display" error -- something inside
@@ -79,8 +85,10 @@ launch_client() {
         # QT_QPA_PLATFORM. Two independent community workarounds for
         # calamares-under-VM issues both target XCB specifically, not
         # Wayland, which lines up. Giving it a real X11 display via
-        # Xwayland (weston's --xwayland flag, see below) instead of
-        # continuing to chase Wayland-side fixes.
+        # Xwayland instead of continuing to chase Wayland-side fixes --
+        # not re-tested under Hyprland specifically, but nothing about
+        # this reasoning was weston-specific, and Hyprland's Xwayland
+        # support is the same protocol-level integration.
         display_sock=$(wait_for_glob "/tmp/.X11-unix/X*") || {
             echo "$(date -Is): launch.sh: timed out waiting for Xwayland's X11 socket" >>"$log_file"
             return 1
@@ -91,7 +99,7 @@ launch_client() {
         display_label="DISPLAY=$DISPLAY"
     else
         sock=$(wait_for_glob "$runtime_dir/wayland-*.lock") || {
-            echo "$(date -Is): launch.sh: timed out waiting for weston's Wayland socket" >>"$log_file"
+            echo "$(date -Is): launch.sh: timed out waiting for the compositor's Wayland socket" >>"$log_file"
             return 1
         }
         export WAYLAND_DISPLAY
@@ -115,37 +123,38 @@ launch_client() {
     # the whole script, and if the client returns ANY non-zero exit
     # code, `set -e` aborts this entire function immediately and
     # silently -- skipping both the "exited" log line below AND the
-    # kill "$weston_pid" call after it. That was the actual root cause
-    # of every single "Chrome only" test showing nothing but the launch
-    # line, forever, no matter which Chrome flags were tried -- none of
-    # those changes could ever have mattered if the script was dying
-    # before it could log anything about them. vpinball never hit this
-    # because it happens to exit 0.
+    # kill "$compositor_pid" call after it. That was the actual root
+    # cause of every single "Chrome only" test showing nothing but the
+    # launch line, forever, no matter which Chrome flags were tried --
+    # none of those changes could ever have mattered if the script was
+    # dying before it could log anything about them. vpinball never hit
+    # this because it happens to exit 0.
     set +e
     stdbuf -oL -eL "$@" >>"$log_file" 2>&1
     rc=$?
     set -e
-    echo "$(date -Is): launch.sh: $client_name exited $rc, stopping weston" >>"$log_file"
+    echo "$(date -Is): launch.sh: $client_name exited $rc, stopping the compositor" >>"$log_file"
 
-    # weston doesn't quit on its own just because its only client
-    # closed -- without this, exiting the client leaves a black screen
-    # (weston still running, nothing to show) instead of returning to
-    # the menu.
-    kill "$weston_pid" 2>/dev/null || true
+    # The compositor doesn't quit on its own just because its only
+    # client closed -- without this, exiting the client leaves a black
+    # screen (compositor still running, nothing to show) instead of
+    # returning to the menu.
+    kill "$compositor_pid" 2>/dev/null || true
 }
 
 launch_client "$@" &
 
-# weston's xwayland module binds its X11 socket directly under
-# /tmp/.X11-unix -- confirmed directly (via a real crash) that it does
-# NOT create that directory itself, and on this weston version, failing
-# to bind there is FATAL to the whole compositor, not just a
-# gracefully-skipped X11 support ("failed to bind to /tmp/.X11-unix/X0:
-# No such file or directory" was the last line weston ever logged
-# before exiting -- taking down the Wayland socket every client,
-# X11-using or not, depends on). This directory is normally created by
-# systemd-tmpfiles at boot, but isn't reliably present by the time this
-# runs -- ensuring it directly instead of depending on that ordering.
+# Xwayland (weston's own, and per Hyprland's docs its integration works
+# the same way) binds its X11 socket directly under /tmp/.X11-unix --
+# confirmed directly under weston (via a real crash) that it does NOT
+# create that directory itself, and failing to bind there was FATAL to
+# the whole compositor there, not just a gracefully-skipped X11 support.
+# This directory is normally created by systemd-tmpfiles at boot, but
+# isn't reliably present by the time this runs -- ensuring it directly
+# instead of depending on that ordering. Kept for Hyprland too, even
+# though this exact failure mode hasn't been independently reproduced
+# under it -- harmless either way, and cheap insurance against the same
+# class of bug.
 #
 # Tolerate failure on both: vpinball/vpinfe/Chrome now run as `vpinos`
 # (non-root), but the installer still runs as root via `sudo` -- if the
@@ -157,21 +166,34 @@ launch_client "$@" &
 mkdir -p /tmp/.X11-unix 2>/dev/null || true
 chmod 1777 /tmp/.X11-unix 2>/dev/null || true
 
-# weston's own output has never been captured anywhere -- it inherits
-# whatever tty ran this script, invisible once weston itself paints
-# over that tty's console, the exact same problem solved for the
-# client's output above. Capturing it separately since weston's own
-# diagnostics (e.g. about how it's handling a client's surface) are a
-# distinct signal from the client's.
+# The compositor's own output has never been captured anywhere -- it
+# inherits whatever tty ran this script, invisible once it paints over
+# that tty's console, the exact same problem solved for the client's
+# output above. Capturing it separately since its own diagnostics (e.g.
+# about how it's handling a client's surface) are a distinct signal
+# from the client's.
 #
-# The installer and vpxconfig get the windowed config (desktop-shell)
-# instead of the kiosk one: kiosk-shell forces every toplevel fullscreen
-# with no window chrome regardless of what the app itself asks for (that's
-# what stretched Calamares before it got this same treatment), which is
-# right for vpinball/vpinfe but wrong for a config tool the user needs a
-# visible, obvious way to close. See /etc/vpinos/weston-installer.ini.
-weston_config=/etc/vpinos/weston.ini
+# The installer and vpxconfig get the windowed config instead of the
+# kiosk one: the kiosk config forces every toplevel fullscreen with no
+# window chrome regardless of what the app itself asks for (that's what
+# stretched Calamares before it got this same treatment under weston),
+# which is right for vpinball/vpinfe but wrong for a config tool the
+# user needs a visible, obvious way to close. See
+# /etc/vpinos/hyprland-installer.conf.
+hypr_config=/etc/vpinos/hyprland.conf
 case "$client_name" in
-    installer | vpxconfig) weston_config=/etc/vpinos/weston-installer.ini ;;
+    installer | vpxconfig) hypr_config=/etc/vpinos/hyprland-installer.conf ;;
 esac
-exec /usr/bin/weston --xwayland --config="$weston_config" >>/var/log/vpinos-weston.log 2>&1
+
+# --i-am-really-stupid: Hyprland refuses to run as root without this
+# (confirmed in `man hyprland` -- "Omits root user privileges check").
+# Weston never had this restriction, so it's a new wrinkle this
+# migration introduced -- the installer is the only caller that ever
+# runs as root (via the sudo rule below), so it's the only case that
+# needs the flag; every other client stays unprivileged as `vpinos` and
+# doesn't need it. Not independently observed triggering the real
+# refusal message -- confirmed only that the flag exists and is
+# documented for exactly this purpose; verify on a real installer boot.
+hypr_flags=""
+[ "$client_name" = "installer" ] && hypr_flags="--i-am-really-stupid"
+exec /usr/bin/Hyprland $hypr_flags --config "$hypr_config" >>/var/log/vpinos-hyprland.log 2>&1

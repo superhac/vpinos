@@ -14,8 +14,18 @@ libvulkan1
 vulkan-tools
 libgl1-mesa-dri
 
-# Wayland compositor (weston kiosk session)
-weston
+# Wayland compositor. Hyprland, not weston (migrated -- see step 5 in
+# notes/vpinos.md for why: weston's app-ids= output routing can't
+# distinguish vpinball's/vpinfe's own separate windows from each other,
+# since they don't set distinct app-ids; Hyprland's window rules can
+# match by window TITLE instead, which vpinball/vpinfe's windows already
+# have distinct ones of). trixie doesn't package Hyprland at all --
+# comes from trixie-backports, pinned in config/archives/vpinos-backports.pref
+# alongside the kernel/Mesa/AMD firmware (same reasoning: trixie's own
+# version predates what's needed). libxkbcommon0 is pinned there too --
+# Hyprland needs a newer one than trixie ships, pulled in automatically
+# as a dependency once pinned, not listed here explicitly.
+hyprland
 seatd
 libwayland-client0
 libwayland-egl1
@@ -23,19 +33,29 @@ libdrm2
 libgbm1
 libinput10
 libudev1
-# wayland-info: compositor-agnostic replacement for weston-info (not
-# bundled with the weston package in trixie) and for wlr-randr (which
-# needs the wlroots-only wlr-output-management-unstable-v1 protocol --
-# confirmed via `strings` on libweston-14.so.0 that weston doesn't
-# implement it at all). wayland-info queries core wl_output plus the
-# XDG output protocol extension, which is what carries output names.
+# wayland-info: compositor-agnostic output/name enumeration, works
+# across any compositor via the standard wl_output + XDG output
+# protocol extension.
 wayland-utils
+# wlr-randr: wlroots-specific output management (wlr-output-management-
+# unstable-v1) -- lets output mode/position/transform be queried and
+# *changed*, not just enumerated like wayland-info. Added on request;
+# not independently confirmed that Hyprland's own compositor library
+# (Aquamarine, broadly wlroots-compatible) implements that protocol.
+wlr-randr
 
 # input / audio
 alsa-utils
 
 # remote/debug access
 openssh-server
+# foot: a real Wayland client terminal for manual debugging (see
+# `launch.sh shell /usr/bin/foot` in notes/vpinos.md step 5) -- weston's
+# bundled weston-terminal filled this role before the Hyprland migration
+# and no longer exists. In plain trixie (not backports), 662K installed,
+# and nearly all its deps (libwayland-client0, libxkbcommon0, ...) are
+# already pulled in by Hyprland itself, so the marginal cost is small.
+foot
 
 # networking -- confirmed directly this was missing entirely, not a
 # regression from anything recent: even on the live session, vpinfe's
@@ -93,8 +113,9 @@ curl
 # live images) -- pulls in calamares itself plus the tools its modules
 # need (rsync, cryptsetup, pkexec).
 #
-# Runs under Xwayland (`xwayland`, weston's `--xwayland` flag), not
-# native Wayland -- confirmed directly that calamares's Wayland support
+# Runs under Xwayland (`xwayland` package; Hyprland's own built-in
+# Xwayland support, `xwayland { enabled = true }`), not native Wayland --
+# confirmed directly under weston that calamares's Wayland support
 # is unreliable: even with QT_QPA_PLATFORM=wayland forced and
 # qt6-wayland installed, its main window rendered fine but its cancel
 # confirmation popup had readable text with zero button/panel chrome

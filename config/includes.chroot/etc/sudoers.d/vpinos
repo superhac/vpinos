@@ -5,7 +5,7 @@
 # Calamares creates (sudoersGroup: sudo, per calamares-settings-debian's
 # users.conf) otherwise falls back to Debian's normal default: prompt
 # for the invoking user's own password. That breaks kiosk operation --
-# vpinos-menu needs to launch weston/vpinball/vpinfe/calamares with zero
+# vpinos-menu needs to launch Hyprland/vpinball/vpinfe/calamares with zero
 # interactive prompts. Scoped to launch.sh specifically (not blanket
 # NOPASSWD: ALL) so a real password is still required for anything else
 # run via sudo on an installed system.

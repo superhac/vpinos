@@ -22,7 +22,8 @@ rm -rf "$workdir"
 # update-alternatives symlink) with no flags of its own, and Chrome
 # defaults to the X11 Ozone platform -- confirmed directly: it fails
 # immediately with "Missing X server or $DISPLAY" since there's no X11
-# (or XWayland) here at all, only weston. Replacing the
+# (or XWayland) here at all, only Hyprland (Wayland-only for this client
+# either way). Replacing the
 # update-alternatives symlink with a wrapper is simplest: vpinfe keeps
 # calling the same path, and gets the right flags transparently, without
 # needing changes on vpinfe's own side.
@@ -43,7 +44,7 @@ rm -rf "$workdir"
 # real, user-visible downside: Chrome showed a permanent
 # "You are using an unsupported command-line flag: --no-sandbox.
 # Stability and security will suffer." infobar in every window while
-# it was set. Not yet re-tested against a real weston session --
+# it was set. Not yet re-tested against a real Hyprland session --
 # theoretically sound, but if sandboxed Chrome fails to start for some
 # reason specific to this image, --no-sandbox is the first thing to
 # try reverting.

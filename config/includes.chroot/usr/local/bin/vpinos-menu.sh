@@ -1,7 +1,7 @@
 #!/bin/sh
 # Crude placeholder menu. launch.sh handles everything -- starting
-# weston directly (exec, inheriting this shell's tty/session) and the
-# chosen client as weston's client -- so this just needs to run it with
+# Hyprland directly (exec, inheriting this shell's tty/session) and the
+# chosen client as its client -- so this just needs to run it with
 # the right command and wait for it to return.
 #
 # Only the installer is `sudo`'d -- it genuinely needs root for
@@ -71,14 +71,13 @@ run_vpxconfig() {
     done
 
     # client_name "vpxconfig" (not "chrome"): that's what launch.sh matches
-    # on to pick the windowed weston config instead of the fullscreen kiosk
-    # one -- a config tool needs a visible, obvious way to close it, unlike
-    # vpinball/vpinfe/the debug Chrome option. --app=URL (not --kiosk) opens
-    # a plain app window with a title bar and close button instead of
-    # suppressing all window chrome; --start-maximized fills the screen
-    # anyway (a real maximize, not fullscreen -- the title bar/close button
-    # stay visible), which weston's desktop-shell (windowed config) is a
-    # normal xdg-shell compositor and should honor like any other.
+    # on to pick the windowed Hyprland config instead of the fullscreen
+    # kiosk one -- a config tool needs a visible, obvious way to close it,
+    # unlike vpinball/vpinfe/the debug Chrome option. --app=URL (not
+    # --kiosk) opens a plain app window with a title bar and close button
+    # instead of suppressing all window chrome; --start-maximized fills
+    # the screen anyway (a real maximize, not fullscreen -- the title
+    # bar/close button stay visible).
     #
     # Returns when the browser is closed; the server is stopped right
     # after, whatever the browser's exit status was.

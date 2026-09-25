@@ -11,3 +11,15 @@
 Package: src:linux src:linux-signed-amd64 src:mesa src:firmware-nonfree
 Pin: release n=trixie-backports
 Pin-Priority: 900
+
+# Hyprland isn't packaged in plain trixie at all -- only trixie-backports
+# has it (0.55.2, confirmed). Needs a newer libxkbcommon0 than trixie
+# ships too (>= 1.12.3; trixie has 1.7.0), which is also backports-only,
+# so it needs its own pin -- without this, apt's solver won't pull a
+# backports-only dependency in automatically even when the package that
+# needs it is itself pinned (confirmed directly: `apt-get install
+# hyprland/trixie-backports` alone left libxkbcommon0 held at 1.7.0 and
+# failed to resolve; only resolved once libxkbcommon0 was pinned too).
+Package: src:hyprland src:libxkbcommon
+Pin: release n=trixie-backports
+Pin-Priority: 900

@@ -43,7 +43,7 @@ as possible:
   kernel**, a current **Mesa (26.1)** and current **AMD GPU firmware** come
   from backports so recent GPUs work out of the box (see
   [Requirements](#requirements)); everything else is stock trixie.
-- **Display:** [weston](https://wayland.freedesktop.org/) as the compositor,
+- **Display:** [Hyprland](https://hyprland.org/) as the compositor,
   with the launched program as its only Wayland client.
 - **Graphics:** open-source Mesa Vulkan drivers (AMD, Intel, NVIDIA via
   NVK) on the Linux 7.1 kernel, so VPinball's BGFX renderer runs with a
@@ -240,7 +240,7 @@ this same sequence.
 | `config/package-lists/` | Debian packages installed into the image |
 | `config/archives/` | apt preferences: kernel, Mesa and AMD firmware come from trixie-backports |
 | `config/hooks/live/` | Scripts run inside the image at build time (user creation, branding, installing vpinball/vpinfe, enabling services) |
-| `config/includes.chroot/` | Files copied verbatim into the image: the launcher and menu (`/usr/local/bin/`), weston and systemd config, apt source and key, Calamares branding, `os-release` |
+| `config/includes.chroot/` | Files copied verbatim into the image: the launcher and menu (`/usr/local/bin/`), Hyprland and systemd config, apt source and key, Calamares branding, `os-release` |
 | `config/bootloaders/` | Boot splash and GRUB background artwork |
 | `Dockerfile` | The reproducible build environment |
 | `.github/workflows/build-iso.yml` | CI build and tag-triggered release |
@@ -251,7 +251,7 @@ are not committed.
 ## Status
 
 **Beta.** Early and actively developed. The build, live boot, launch path
-(weston &rarr; vpinball / vpinfe) and installer are working end to end.
+(Hyprland &rarr; vpinball / vpinfe) and installer are working end to end.
 Booting straight into the frontend on an installed cabinet is now
 opt-in (menu option 6). Still ahead: persistence for the live medium, and
 narrowing GPU/firmware support once the target hardware is settled.

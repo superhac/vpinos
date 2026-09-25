@@ -9,6 +9,7 @@ chown root:root /usr/local/bin/launch.sh
 chmod 0755 /usr/local/bin/launch.sh
 chmod +x /usr/local/bin/vpinos-menu.sh
 ln -sf /usr/local/bin/vpinos-menu.sh /usr/local/bin/vpinos-menu
+chmod +x /usr/local/bin/vpinos-detect-monitors.py
 systemctl set-default multi-user.target
 systemctl enable seatd.service
 systemctl enable NetworkManager.service
@@ -47,8 +48,8 @@ chmod 0644 /etc/systemd/system/ssh.service.d/vpinos-hostkeys.conf
 # exists and is writable by it, not create a new one there. Root
 # (the installer, still sudo'd) can always write regardless of
 # ownership, so owning these by vpinos works for both.
-touch /var/log/vpinos-launch.log /var/log/vpinos-weston.log /var/log/vpinos-menu.log /var/log/vpinos-vpxconfig.log
-chown vpinos:vpinos /var/log/vpinos-launch.log /var/log/vpinos-weston.log /var/log/vpinos-menu.log /var/log/vpinos-vpxconfig.log
+touch /var/log/vpinos-launch.log /var/log/vpinos-hyprland.log /var/log/vpinos-menu.log /var/log/vpinos-vpxconfig.log
+chown vpinos:vpinos /var/log/vpinos-launch.log /var/log/vpinos-hyprland.log /var/log/vpinos-menu.log /var/log/vpinos-vpxconfig.log
 
 # vpinos-menu's boot-to-VPinFE toggle writes this directly, as `vpinos`,
 # no sudo involved -- unlike launch.sh/sudoers this isn't a privilege
@@ -57,8 +58,8 @@ chown vpinos:vpinos /var/log/vpinos-launch.log /var/log/vpinos-weston.log /var/l
 chown vpinos:vpinos /etc/vpinos/boot-mode
 chmod 0644 /etc/vpinos/boot-mode
 
-# No systemd service for weston itself -- boot goes to a normal console.
-# Run `vpinos-menu` by hand to bring up the (crude, placeholder) menu;
-# picking its one option runs launch.sh, which execs weston directly
-# (inheriting the caller's tty/session) and launches vpinball as its
-# client once the Wayland socket is up.
+# No systemd service for Hyprland itself -- boot goes to a normal console
+# (auto-launching vpinos-menu, see /etc/profile.d/vpinos-menu.sh).
+# Picking a menu option runs launch.sh, which execs Hyprland directly
+# (inheriting the caller's tty/session) and launches the chosen client as
+# its client once the Wayland socket is up.
