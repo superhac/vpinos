@@ -8,7 +8,10 @@
 # vpinos-workspace-monitors block -- those lines, combined with the
 # per-title windowrules already in hyprland.conf (which route
 # vpinball's/vpinfe's own windows to workspace 1/2/3 by title), are what
-# actually puts Table/Backglass/DMD on the right physical screen.
+# actually puts Table/Backglass/DMD on the right physical screen. Also
+# has a last "VPinball Mode" option (Desktop/Cabinet) that Save writes
+# straight into vpinball's own VPinballX.ini (BGSet, plus
+# BackglassOutput/ScoreViewOutput based on which roles got assigned).
 #
 # Run as a launch.sh "shell" client, same pattern as the debug terminal
 # (`launch.sh shell /usr/bin/foot`) -- Hyprland needs to already be up
@@ -39,6 +42,9 @@ END_MARKER = "# END vpinos-workspace-monitors"
 # hyprland.conf (VPinFE Table/vpinball Player -> workspace 1, etc.) --
 # not user-configurable, just which role goes on which workspace.
 ROLE_WORKSPACE = {"Table": 1, "Backglass": 2, "DMD": 3}
+
+VPX_BINARY = "/opt/vpinball/VPinballX_BGFX"
+VPX_INI_PATH = os.path.expanduser("~/.local/share/VPinballX/10.8/VPinballX.ini")
 
 
 def ensure_instance_signature():
@@ -195,6 +201,60 @@ def save_workspace_lines(lines):
         f.write(new_content)
 
 
+def ensure_vpinballx_ini():
+    # First run (or a freshly-installed cabinet) has no ini yet --
+    # vpinball only writes its defaults out on its own, so there's
+    # nothing to edit until it's been run at least once. `-h` (just
+    # prints help and exits) is enough to trigger that write without
+    # actually opening a table or a window.
+    if os.path.exists(VPX_INI_PATH):
+        return
+    os.makedirs(os.path.dirname(VPX_INI_PATH), exist_ok=True)
+    subprocess.run([VPX_BINARY, "-h"], capture_output=True, text=True, check=False)
+    if not os.path.exists(VPX_INI_PATH):
+        raise RuntimeError(f"{VPX_INI_PATH} still missing after running {VPX_BINARY} -h")
+
+
+def set_ini_value(content, key, value):
+    # Plain text substitution, not configparser -- vpinball's own ini
+    # has many sections and configparser would need to know which one
+    # each key lives in (and risks reshuffling/dropping comments on a
+    # rewrite). vpinball generates the file itself via `-h` first (see
+    # ensure_vpinballx_ini), so these keys already exist with their
+    # defaults by the time this runs -- a straight in-place replace of
+    # the existing line, keyed off the exact key name.
+    pattern = re.compile(rf"^([ \t]*{re.escape(key)}[ \t]*=[ \t]*).*$", re.IGNORECASE | re.MULTILINE)
+    new_content, count = pattern.subn(rf"\g<1>{value}", content, count=1)
+    if count == 0:
+        sep = "" if not content or content.endswith("\n") else "\n"
+        new_content = f"{content}{sep}{key} = {value}\n"
+    return new_content
+
+
+def parse_existing_vpinball_mode():
+    # Pre-fills the Desktop/Cabinet radio buttons from whatever's
+    # already in VPinballX.ini, same idea as parse_existing_roles()
+    # above -- reopening the tool shouldn't lose a prior choice.
+    try:
+        with open(VPX_INI_PATH) as f:
+            content = f.read()
+    except OSError:
+        return "Desktop"
+    m = re.search(r"^[ \t]*BGSet[ \t]*=[ \t]*(\d+)", content, re.IGNORECASE | re.MULTILINE)
+    return "Cabinet" if m and m.group(1).strip() == "1" else "Desktop"
+
+
+def save_vpinball_settings(mode, role_to_monitor):
+    ensure_vpinballx_ini()
+    with open(VPX_INI_PATH) as f:
+        content = f.read()
+    content = set_ini_value(content, "BGSet", 1 if mode == "Cabinet" else 0)
+    content = set_ini_value(content, "BackglassOutput", 1 if "Backglass" in role_to_monitor else 0)
+    content = set_ini_value(content, "ScoreViewOutput", 1 if "DMD" in role_to_monitor else 0)
+    with open(VPX_INI_PATH, "w") as f:
+        f.write(content)
+
+
 def run_gui(monitors):
     import tkinter as tk
     from tkinter import ttk
@@ -271,6 +331,20 @@ def run_gui(monitors):
             ).grid(row=0, column=col, padx=6)
         role_vars.append((mon, role_var))
 
+    # Last option, below the displays -- Desktop/Cabinet mode
+    # (VPinballX.ini's `BGSet`), plus which of the assigned roles above
+    # actually get their own separate vpinball window
+    # (`BackglassOutput`/`ScoreViewOutput` -- only meaningful once
+    # there's a Backglass/DMD monitor to put them on).
+    mode_frame = tk.Frame(root, bg="black")
+    mode_frame.pack(pady=(20, 0))
+    ttk.Label(mode_frame, text="VPinball Mode:", style="TLabel").grid(row=0, column=0, padx=(0, 20))
+    vpinball_mode_var = tk.StringVar(value=parse_existing_vpinball_mode())
+    for col, mode in enumerate(("Desktop", "Cabinet")):
+        ttk.Radiobutton(
+            mode_frame, text=mode, value=mode, variable=vpinball_mode_var, style="TRadiobutton"
+        ).grid(row=0, column=col + 1, padx=6)
+
     status = ttk.Label(root, text="", style="TLabel")
     status.pack(pady=(10, 0))
 
@@ -302,8 +376,19 @@ def run_gui(monitors):
             status.configure(text=f"ERROR: {exc}", foreground="red")
             return
 
+        try:
+            save_vpinball_settings(vpinball_mode_var.get(), role_to_monitor)
+        except (OSError, RuntimeError) as exc:
+            status.configure(
+                text=f"Saved hyprland.conf, but ERROR saving VPinballX.ini: {exc}",
+                foreground="red",
+            )
+            return
+
         hyprctl("reload")
-        status.configure(text="Saved to hyprland.conf and applied.", foreground="#7CFC00")
+        status.configure(
+            text="Saved to hyprland.conf and VPinballX.ini, applied.", foreground="#7CFC00"
+        )
 
     button_row = tk.Frame(root, bg="black")
     button_row.pack(pady=20)
