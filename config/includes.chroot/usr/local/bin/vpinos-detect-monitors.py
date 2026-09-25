@@ -3,7 +3,7 @@
 # cabinet builder click SHOW next to a monitor to display its info
 # fullscreen on the physical screen it actually is (so the output name
 # can be matched to a real screen), pick a role (Table/Backglass/DMD)
-# for each from a dropdown, and Save to write the
+# for each, and Save to write the
 # `workspace = N, monitor:NAME, default:true` lines into hyprland.conf's
 # vpinos-workspace-monitors block -- those lines, combined with the
 # per-title windowrules already in hyprland.conf (which route
@@ -255,6 +255,25 @@ def save_vpinball_settings(mode, role_to_monitor):
         f.write(content)
 
 
+
+# Dark, card-based palette -- deliberately not the default ttk "clam"
+# look (flat gray buttons/labels on plain black), which is what made
+# the first version of this screen look bare. Plain colors/fonts only
+# (no images, no rounded corners) since ttk's "clam" theme is what's
+# actually available here, no extra theme package installed.
+BG = "#0d1117"
+CARD_BG = "#161b22"
+BORDER = "#30363d"
+TEXT = "#e6edf3"
+MUTED = "#8b949e"
+ACCENT = "#2f81f7"
+ACCENT_HOVER = "#4c94ff"
+SUCCESS = "#238636"
+SUCCESS_HOVER = "#2ea043"
+NEUTRAL = "#30363d"
+NEUTRAL_HOVER = "#3d444d"
+
+
 def run_gui(monitors):
     import tkinter as tk
     from tkinter import ttk
@@ -266,26 +285,57 @@ def run_gui(monitors):
 
     root = tk.Tk()
     root.title("VPinOS -- Monitor Detection")
-    root.configure(bg="black")
+    root.configure(bg=BG)
     root.attributes("-fullscreen", True)
 
     style = ttk.Style(root)
     style.theme_use("clam")
-    style.configure("TLabel", background="black", foreground="white", font=("sans", 16))
-    style.configure("Header.TLabel", background="black", foreground="white", font=("sans", 20, "bold"))
-    style.configure("TButton", font=("sans", 16, "bold"), padding=10)
-    style.configure("TRadiobutton", background="black", foreground="white", font=("sans", 14))
-    style.map("TRadiobutton", background=[("active", "black")])
+    style.configure("TLabel", background=BG, foreground=TEXT, font=("sans", 14))
+    style.configure("Header.TLabel", background=BG, foreground=TEXT, font=("sans", 24, "bold"))
+    style.configure("Sub.TLabel", background=BG, foreground=MUTED, font=("sans", 12))
+    style.configure("Section.TLabel", background=BG, foreground=TEXT, font=("sans", 15, "bold"))
+    style.configure("Card.TLabel", background=CARD_BG, foreground=TEXT, font=("sans", 14))
 
-    header = ttk.Label(
-        root,
-        text="Detected monitors -- SHOW to identify, then select a role for each",
-        style="Header.TLabel",
+    style.configure("TButton", font=("sans", 14, "bold"), padding=(16, 10), relief="flat", borderwidth=0)
+    style.configure("Show.TButton", background=ACCENT, foreground="white")
+    style.map(
+        "Show.TButton",
+        background=[("disabled", BORDER), ("active", ACCENT_HOVER)],
+        foreground=[("disabled", MUTED)],
     )
-    header.pack(pady=30)
+    style.configure("Save.TButton", background=SUCCESS, foreground="white", padding=(24, 12))
+    style.map("Save.TButton", background=[("active", SUCCESS_HOVER)])
+    style.configure("Quit.TButton", background=NEUTRAL, foreground=TEXT, padding=(24, 12))
+    style.map("Quit.TButton", background=[("active", NEUTRAL_HOVER)])
 
-    table = tk.Frame(root, bg="black")
-    table.pack(pady=20)
+    style.configure("TRadiobutton", background=CARD_BG, foreground=TEXT, font=("sans", 13))
+    style.map(
+        "TRadiobutton",
+        background=[("active", CARD_BG)],
+        indicatorcolor=[("selected", ACCENT), ("!selected", BORDER)],
+    )
+    style.configure("Mode.TRadiobutton", background=BG, foreground=TEXT, font=("sans", 13))
+    style.map(
+        "Mode.TRadiobutton",
+        background=[("active", BG)],
+        indicatorcolor=[("selected", ACCENT), ("!selected", BORDER)],
+    )
+
+    ttk.Label(root, text="VPinOS Monitor Setup", style="Header.TLabel").pack(pady=(36, 4))
+    ttk.Label(
+        root,
+        text="Press SHOW to identify a screen, then select its role.",
+        style="Sub.TLabel",
+    ).pack(pady=(0, 28))
+
+    content = tk.Frame(root, bg=BG)
+    content.pack(padx=60)
+
+    col_headers = tk.Frame(content, bg=BG)
+    col_headers.pack(fill="x", pady=(0, 6))
+    ttk.Label(col_headers, text="MONITOR", style="Sub.TLabel").grid(row=0, column=0, sticky="w", padx=(18, 0))
+    ttk.Label(col_headers, text="IDENTIFY", style="Sub.TLabel").grid(row=0, column=1, padx=(160, 0))
+    ttk.Label(col_headers, text="ROLE", style="Sub.TLabel").grid(row=0, column=2, padx=(60, 18))
 
     show_buttons = []
     role_vars = []
@@ -304,12 +354,18 @@ def run_gui(monitors):
         for b in show_buttons:
             b.configure(state="normal")
 
-    for row, mon in enumerate(ordered):
-        text = f"{mon['name']}   {mon.get('description', '')}   {geometry_of(mon)}"
-        ttk.Label(table, text=text, style="TLabel").grid(row=row, column=0, sticky="w", pady=8, padx=(0, 30))
+    for mon in ordered:
+        row_frame = tk.Frame(content, bg=CARD_BG, highlightbackground=BORDER, highlightthickness=1)
+        row_frame.pack(fill="x", pady=5)
 
-        btn = ttk.Button(table, text="SHOW")
-        btn.grid(row=row, column=1, pady=8, padx=(0, 30))
+        info = tk.Frame(row_frame, bg=CARD_BG)
+        info.pack(side="left", fill="x", expand=True, padx=18, pady=16)
+        tk.Label(info, text=mon["name"], bg=CARD_BG, fg=TEXT, font=("sans", 17, "bold")).pack(anchor="w")
+        sub = f"{mon.get('description', '')}   |   {geometry_of(mon)}"
+        tk.Label(info, text=sub, bg=CARD_BG, fg=MUTED, font=("sans", 11)).pack(anchor="w", pady=(2, 0))
+
+        btn = ttk.Button(row_frame, text="SHOW", style="Show.TButton")
+        btn.pack(side="left", padx=18)
         btn.configure(command=lambda m=mon: on_show(m))
         show_buttons.append(btn)
 
@@ -323,12 +379,12 @@ def run_gui(monitors):
         # never a separate one, so there's nothing extra for the
         # catch-all to catch.
         role_var = tk.StringVar(value=existing_roles.get(mon["name"], ""))
-        radios = tk.Frame(table, bg="black")
-        radios.grid(row=row, column=2, pady=8, sticky="w")
+        radios = tk.Frame(row_frame, bg=CARD_BG)
+        radios.pack(side="left", padx=18)
         for col, role in enumerate(ROLE_WORKSPACE.keys()):
             ttk.Radiobutton(
                 radios, text=role, value=role, variable=role_var, style="TRadiobutton"
-            ).grid(row=0, column=col, padx=6)
+            ).grid(row=0, column=col, padx=8)
         role_vars.append((mon, role_var))
 
     # Last option, below the displays -- Desktop/Cabinet mode
@@ -336,17 +392,19 @@ def run_gui(monitors):
     # actually get their own separate vpinball window
     # (`BackglassOutput`/`ScoreViewOutput` -- only meaningful once
     # there's a Backglass/DMD monitor to put them on).
-    mode_frame = tk.Frame(root, bg="black")
-    mode_frame.pack(pady=(20, 0))
-    ttk.Label(mode_frame, text="VPinball Mode:", style="TLabel").grid(row=0, column=0, padx=(0, 20))
+    mode_card = tk.Frame(content, bg=BG)
+    mode_card.pack(fill="x", pady=(24, 0))
+    ttk.Label(mode_card, text="VPinball Mode", style="Section.TLabel").pack(anchor="w", padx=18)
+    mode_frame = tk.Frame(mode_card, bg=BG)
+    mode_frame.pack(anchor="w", padx=18, pady=(8, 0))
     vpinball_mode_var = tk.StringVar(value=parse_existing_vpinball_mode())
     for col, mode in enumerate(("Desktop", "Cabinet")):
         ttk.Radiobutton(
-            mode_frame, text=mode, value=mode, variable=vpinball_mode_var, style="TRadiobutton"
-        ).grid(row=0, column=col + 1, padx=6)
+            mode_frame, text=mode, value=mode, variable=vpinball_mode_var, style="Mode.TRadiobutton"
+        ).grid(row=0, column=col, padx=(0, 24))
 
     status = ttk.Label(root, text="", style="TLabel")
-    status.pack(pady=(10, 0))
+    status.pack(pady=(24, 0))
 
     def on_save():
         role_to_monitor = {}
@@ -362,7 +420,7 @@ def run_gui(monitors):
         if conflicts:
             status.configure(
                 text=f"ERROR: {', '.join(sorted(conflicts))} assigned to more than one monitor.",
-                foreground="red",
+                foreground="#f85149",
             )
             return
 
@@ -370,10 +428,10 @@ def run_gui(monitors):
         try:
             save_workspace_lines(lines)
         except OSError as exc:
-            status.configure(text=f"ERROR saving hyprland.conf: {exc}", foreground="red")
+            status.configure(text=f"ERROR saving hyprland.conf: {exc}", foreground="#f85149")
             return
         except RuntimeError as exc:
-            status.configure(text=f"ERROR: {exc}", foreground="red")
+            status.configure(text=f"ERROR: {exc}", foreground="#f85149")
             return
 
         try:
@@ -381,19 +439,19 @@ def run_gui(monitors):
         except (OSError, RuntimeError) as exc:
             status.configure(
                 text=f"Saved hyprland.conf, but ERROR saving VPinballX.ini: {exc}",
-                foreground="red",
+                foreground="#f85149",
             )
             return
 
         hyprctl("reload")
         status.configure(
-            text="Saved to hyprland.conf and VPinballX.ini, applied.", foreground="#7CFC00"
+            text="Saved to hyprland.conf and VPinballX.ini, applied.", foreground=SUCCESS_HOVER
         )
 
-    button_row = tk.Frame(root, bg="black")
-    button_row.pack(pady=20)
-    ttk.Button(button_row, text="Save", command=on_save).grid(row=0, column=0, padx=10)
-    ttk.Button(button_row, text="Quit", command=root.destroy).grid(row=0, column=1, padx=10)
+    button_row = tk.Frame(root, bg=BG)
+    button_row.pack(pady=(8, 30))
+    ttk.Button(button_row, text="Save", style="Save.TButton", command=on_save).grid(row=0, column=0, padx=10)
+    ttk.Button(button_row, text="Quit", style="Quit.TButton", command=root.destroy).grid(row=0, column=1, padx=10)
     root.bind("<Escape>", lambda e: root.destroy())
 
     root.mainloop()

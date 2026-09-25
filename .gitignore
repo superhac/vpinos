@@ -19,3 +19,10 @@
 /live-image-amd64.*
 /chroot.*
 /binary.*
+
+# Python bytecode cache -- created wherever a .py file under
+# config/includes.chroot/ gets syntax-checked directly with `python3`
+# (e.g. `python3 -m py_compile`) on the build host, not part of the
+# shipped image
+__pycache__/
+*.pyc
