@@ -1,6 +1,11 @@
 # base
 systemd-sysv
+#if ARCHITECTURES amd64
 linux-image-amd64
+#endif
+#if ARCHITECTURES arm64
+linux-image-arm64
+#endif
 # Broad firmware (all vendors: GPU, WiFi, Bluetooth, audio DSP, NICs) --
 # costs ~850M installed, but the target cabinet's actual hardware isn't
 # known yet, so a narrower vendor-specific set (tried once, reverted)
@@ -182,4 +187,9 @@ librsvg2-bin
 #      interactive "install grub now" setup, which `-bin` packages
 #      don't have). That's the actual fix -- replaces grub-efi-amd64-bin
 #      below (grub-efi-amd64 depends on it anyway, so nothing is lost).
+#if ARCHITECTURES amd64
 grub-efi-amd64
+#endif
+#if ARCHITECTURES arm64
+grub-efi-arm64
+#endif

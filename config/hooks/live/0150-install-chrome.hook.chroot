@@ -12,7 +12,7 @@ set -e
 workdir=$(mktemp -d)
 cd "$workdir"
 
-curl -fsSL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o google-chrome-stable.deb
+curl -fsSL "https://dl.google.com/linux/direct/google-chrome-stable_current_$(dpkg --print-architecture).deb" -o google-chrome-stable.deb
 apt-get install -y ./google-chrome-stable.deb
 
 cd /
