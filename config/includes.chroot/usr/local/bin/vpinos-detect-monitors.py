@@ -14,7 +14,11 @@
 # BackglassOutput/ScoreViewOutput based on which roles got assigned).
 # With more than one monitor, Save also writes vpinfe's own
 # tablescreenid/bgscreenid/dmdscreenid in vpinfe.ini to each role's
-# monitor ID.
+# monitor ID. Selecting Cabinet mode reveals two more sections
+# (CabinetAutofitMode, and ScreenWidth/ScreenHeight/ScreenInclination),
+# also written to VPinballX.ini -- hidden entirely in Desktop mode,
+# since VPinballX.ini's own comments say they only matter in Cabinet
+# mode.
 #
 # Run as a launch.sh "shell" client, same pattern as the debug terminal
 # (`launch.sh shell /usr/bin/foot`) -- Hyprland needs to already be up
@@ -48,6 +52,59 @@ ROLE_WORKSPACE = {"Table": 1, "Backglass": 2, "DMD": 3}
 
 VPX_BINARY = "/opt/vpinball/VPinballX_BGFX"
 VPX_INI_PATH = os.path.expanduser("~/.local/share/VPinballX/10.8/VPinballX.ini")
+
+# Cabinet-only extras (only meaningful once VPinball Mode = Cabinet --
+# see VPinballX.ini's own comments): value, display name, description.
+CABINET_AUTOFIT_OPTIONS = [
+    (
+        "0",
+        "Manual",
+        "No automatic fitting -- the table keeps its default view/camera position.",
+    ),
+    (
+        "1",
+        "Fit Table",
+        "Sizes the table to fill the width of your screen while keeping its true "
+        "proportions. Parts of the apron or the top of the playfield may be cut "
+        'off, and the flippers are placed at the height set by "Autofit Pos".',
+    ),
+    (
+        "2",
+        "Fit Screen",
+        "Stretches the table lengthwise so the whole thing fills your screen with "
+        "nothing cut off. The stretching makes round objects like the ball and "
+        "bumpers look slightly oval.",
+    ),
+]
+
+# key, display name, description -- Autofit needs these; VPinball itself
+# logs an error and does nothing if ScreenWidth/ScreenHeight are <= 1,
+# rather than something this tool needs to re-validate.
+SCREEN_DIMENSION_FIELDS = [
+    (
+        "ScreenWidth",
+        "Screen Width (cm)",
+        "The physical width, in cm, of the visible picture on your playfield "
+        "screen. Always measure the long side, even if the monitor lies sideways "
+        "in your cabinet. VPX uses it with Screen Height to size the table "
+        "correctly on your screen.",
+    ),
+    (
+        "ScreenHeight",
+        "Screen Height (cm)",
+        "The physical height, in cm, of the visible picture on your playfield "
+        "screen. Always measure the short side. Measure only the lit display "
+        "area, not the bezel.",
+    ),
+    (
+        "ScreenInclination",
+        "Screen Inclination (degrees)",
+        "How far, in degrees, your playfield screen is tilted from flat. 0 means "
+        "perfectly level, and positive values mean the back end, toward the "
+        "backbox, is raised. VPX uses it to correct the 3D perspective so the "
+        "table looks right from where you stand.",
+    ),
+]
 
 VPINFE_INI_PATH = os.path.expanduser("~/.config/vpinfe/vpinfe.ini")
 VPINFE_INI_KEY = {"Table": "tablescreenid", "Backglass": "bgscreenid", "DMD": "dmdscreenid"}
@@ -250,13 +307,44 @@ def parse_existing_vpinball_mode():
     return "Cabinet" if m and m.group(1).strip() == "1" else "Desktop"
 
 
-def save_vpinball_settings(mode, role_to_monitor):
+def parse_existing_cabinet_autofit_mode():
+    try:
+        with open(VPX_INI_PATH) as f:
+            content = f.read()
+    except OSError:
+        return "0"
+    m = re.search(r"^[ \t]*CabinetAutofitMode[ \t]*=[ \t]*(\d+)", content, re.IGNORECASE | re.MULTILINE)
+    value = m.group(1) if m else "0"
+    return value if value in ("0", "1", "2") else "0"
+
+
+def parse_existing_screen_field(key):
+    try:
+        with open(VPX_INI_PATH) as f:
+            content = f.read()
+    except OSError:
+        return ""
+    m = re.search(rf"^[ \t]*{re.escape(key)}[ \t]*=[ \t]*(\S*)", content, re.IGNORECASE | re.MULTILINE)
+    return m.group(1) if m else ""
+
+
+def save_vpinball_settings(mode, role_to_monitor, cabinet_autofit_mode=None, screen_fields=None):
     ensure_vpinballx_ini()
     with open(VPX_INI_PATH) as f:
         content = f.read()
     content = set_ini_value(content, "BGSet", 1 if mode == "Cabinet" else 0)
     content = set_ini_value(content, "BackglassOutput", 1 if "Backglass" in role_to_monitor else 0)
     content = set_ini_value(content, "ScoreViewOutput", 1 if "DMD" in role_to_monitor else 0)
+    # Cabinet-only extras -- left untouched entirely in Desktop mode
+    # rather than overwritten with blank/default values, since they
+    # only matter once Cabinet mode is actually selected.
+    if mode == "Cabinet":
+        if cabinet_autofit_mode is not None:
+            content = set_ini_value(content, "CabinetAutofitMode", cabinet_autofit_mode)
+        for key, value in (screen_fields or {}).items():
+            value = value.strip()
+            if value:
+                content = set_ini_value(content, key, value)
     with open(VPX_INI_PATH, "w") as f:
         f.write(content)
 
@@ -347,9 +435,55 @@ def run_gui(monitors):
         indicatorcolor=[("selected", ACCENT), ("!selected", BORDER)],
     )
 
-    ttk.Label(root, text="VPinOS Monitor Setup", style="Header.TLabel").pack(pady=(36, 4))
+    # Scrollable body: Cabinet mode's extra sections can push the total
+    # content taller than the screen, and this is a fixed-size fullscreen
+    # window with no window chrome to resize -- confirmed directly, the
+    # bottom (Screen Dimensions, Save/Quit) just ran off the bottom of a
+    # real 1280x800 screen with no way to reach it at all. A Canvas +
+    # Scrollbar is the standard Tk way to make an arbitrarily-tall body
+    # scrollable; everything below is parented to `scroll_frame` (inside
+    # the canvas), not `root`, directly.
+    outer = tk.Frame(root, bg=BG)
+    outer.pack(fill="both", expand=True)
+    canvas = tk.Canvas(outer, bg=BG, highlightthickness=0)
+    scrollbar = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+    canvas.configure(yscrollcommand=scrollbar.set)
+    scrollbar.pack(side="right", fill="y")
+    canvas.pack(side="left", fill="both", expand=True)
+
+    scroll_frame = tk.Frame(canvas, bg=BG)
+    scroll_window = canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+
+    def _on_scroll_frame_configure(_event=None):
+        canvas.configure(scrollregion=canvas.bbox("all"))
+
+    def _on_canvas_configure(event):
+        # Keeps scroll_frame's contents centered and as wide as the
+        # canvas itself, rather than a fixed/guessed width.
+        canvas.itemconfig(scroll_window, width=event.width)
+
+    scroll_frame.bind("<Configure>", _on_scroll_frame_configure)
+    canvas.bind("<Configure>", _on_canvas_configure)
+
+    def _on_mousewheel(event):
+        if event.num == 5 or event.delta < 0:
+            canvas.yview_scroll(1, "units")
+        else:
+            canvas.yview_scroll(-1, "units")
+
+    # Button-4/-5 (X11/Xwayland scroll-wheel events) and MouseWheel
+    # (harmless if never fired here) both bound -- whichever a real
+    # mouse or trackball sends, plus the scrollbar itself works for a
+    # touchscreen with no wheel at all.
+    canvas.bind_all("<Button-4>", _on_mousewheel)
+    canvas.bind_all("<Button-5>", _on_mousewheel)
+    canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+    root_ = scroll_frame
+
+    ttk.Label(root_, text="VPinOS Monitor Setup", style="Header.TLabel").pack(pady=(36, 4))
     ttk.Label(
-        root,
+        root_,
         text="Press SHOW to identify a screen, then select its role.",
         style="Sub.TLabel",
     ).pack(pady=(0, 28))
@@ -360,7 +494,7 @@ def run_gui(monitors):
     # widths, so the header drifted out of alignment with the cards
     # below it. A single shared grid with fixed column minsizes is what
     # actually keeps them lined up regardless of content width.
-    content = tk.Frame(root, bg=BG)
+    content = tk.Frame(root_, bg=BG)
     content.pack(padx=60)
     content.grid_columnconfigure(0, minsize=460, weight=1)
     content.grid_columnconfigure(1, minsize=190)
@@ -447,7 +581,7 @@ def run_gui(monitors):
     # to mix `pack` and `grid` on children of the same parent
     # ("cannot use geometry manager pack inside ... which already has
     # slaves managed by grid"), confirmed directly by a real crash.
-    mode_card = tk.Frame(root, bg=BG)
+    mode_card = tk.Frame(root_, bg=BG)
     mode_card.pack(pady=(24, 0))
     ttk.Label(mode_card, text="VPinball Mode", style="Section.TLabel").pack(anchor="center")
     mode_frame = tk.Frame(mode_card, bg=BG)
@@ -458,8 +592,73 @@ def run_gui(monitors):
             mode_frame, text=mode, value=mode, variable=vpinball_mode_var, style="Mode.TRadiobutton"
         ).grid(row=0, column=col, padx=(0, 24))
 
-    status = ttk.Label(root, text="", style="TLabel")
+    # Cabinet-only extras -- only meaningful once VPinball Mode =
+    # Cabinet (see VPinballX.ini's own comments), so hidden entirely
+    # otherwise rather than shown but grayed out. Toggled via a trace on
+    # vpinball_mode_var; `before=status` on every re-show since
+    # pack_forget() followed by a bare pack() would otherwise just
+    # append it after whatever's currently last (status/button_row),
+    # losing its position between the mode picker and the status line.
+    DESC_WRAP = 760
+    cabinet_extra = tk.Frame(root_, bg=BG)
+
+    ttk.Label(cabinet_extra, text="Cabinet Autofit Mode", style="Section.TLabel").pack(
+        anchor="w", padx=18, pady=(0, 8)
+    )
+    cabinet_autofit_var = tk.StringVar(value=parse_existing_cabinet_autofit_mode())
+    for value, name, desc in CABINET_AUTOFIT_OPTIONS:
+        row = tk.Frame(cabinet_extra, bg=CARD_BG, highlightbackground=BORDER, highlightthickness=1)
+        row.pack(fill="x", pady=4)
+        ttk.Radiobutton(
+            row, value=value, variable=cabinet_autofit_var, style="TRadiobutton"
+        ).pack(side="left", padx=(18, 12), pady=16, anchor="n")
+        text_col = tk.Frame(row, bg=CARD_BG)
+        text_col.pack(side="left", padx=(0, 18), pady=16, fill="x", expand=True)
+        tk.Label(text_col, text=name, bg=CARD_BG, fg=TEXT, font=("sans", 15, "bold")).pack(anchor="w")
+        tk.Label(
+            text_col, text=desc, bg=CARD_BG, fg=MUTED, font=("sans", 11),
+            wraplength=DESC_WRAP, justify="left",
+        ).pack(anchor="w", pady=(2, 0))
+
+    ttk.Label(cabinet_extra, text="Screen Dimensions", style="Section.TLabel").pack(
+        anchor="w", padx=18, pady=(20, 2)
+    )
+    ttk.Label(
+        cabinet_extra,
+        text='Needed for Autofit ("Fit Table"/"Fit Screen") -- Manual mode ignores these.',
+        style="Sub.TLabel",
+    ).pack(anchor="w", padx=18, pady=(0, 8))
+    screen_field_vars = {}
+    for key, name, desc in SCREEN_DIMENSION_FIELDS:
+        row = tk.Frame(cabinet_extra, bg=CARD_BG, highlightbackground=BORDER, highlightthickness=1)
+        row.pack(fill="x", pady=4)
+        text_col = tk.Frame(row, bg=CARD_BG)
+        text_col.pack(side="left", padx=18, pady=16, fill="x", expand=True)
+        tk.Label(text_col, text=name, bg=CARD_BG, fg=TEXT, font=("sans", 15, "bold")).pack(anchor="w")
+        tk.Label(
+            text_col, text=desc, bg=CARD_BG, fg=MUTED, font=("sans", 11),
+            wraplength=DESC_WRAP, justify="left",
+        ).pack(anchor="w", pady=(2, 0))
+        field_var = tk.StringVar(value=parse_existing_screen_field(key))
+        entry = tk.Entry(
+            row, textvariable=field_var, width=8, bg=BG, fg=TEXT,
+            insertbackground=TEXT, relief="flat", highlightthickness=1,
+            highlightbackground=BORDER, highlightcolor=ACCENT, font=("sans", 14),
+        )
+        entry.pack(side="left", padx=(0, 18))
+        screen_field_vars[key] = field_var
+
+    status = ttk.Label(root_, text="", style="TLabel")
     status.pack(pady=(24, 0))
+
+    def on_mode_change(*_args):
+        if vpinball_mode_var.get() == "Cabinet":
+            cabinet_extra.pack(fill="x", padx=60, pady=(20, 0), before=status)
+        else:
+            cabinet_extra.pack_forget()
+
+    vpinball_mode_var.trace_add("write", on_mode_change)
+    on_mode_change()
 
     def on_save():
         role_to_monitor = {}
@@ -490,7 +689,12 @@ def run_gui(monitors):
             return
 
         try:
-            save_vpinball_settings(vpinball_mode_var.get(), role_to_monitor)
+            save_vpinball_settings(
+                vpinball_mode_var.get(),
+                role_to_monitor,
+                cabinet_autofit_mode=cabinet_autofit_var.get(),
+                screen_fields={key: var.get() for key, var in screen_field_vars.items()},
+            )
         except (OSError, RuntimeError) as exc:
             status.configure(
                 text=f"Saved hyprland.conf, but ERROR saving VPinballX.ini: {exc}",
@@ -514,7 +718,7 @@ def run_gui(monitors):
         hyprctl("reload")
         status.configure(text=f"Saved to {saved}, applied.", foreground=SUCCESS_HOVER)
 
-    button_row = tk.Frame(root, bg=BG)
+    button_row = tk.Frame(root_, bg=BG)
     button_row.pack(pady=(8, 30))
     ttk.Button(button_row, text="Save", style="Save.TButton", command=on_save).grid(row=0, column=0, padx=10)
     ttk.Button(button_row, text="Quit", style="Quit.TButton", command=root.destroy).grid(row=0, column=1, padx=10)
