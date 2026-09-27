@@ -12,6 +12,9 @@
 # has a last "VPinball Mode" option (Desktop/Cabinet) that Save writes
 # straight into vpinball's own VPinballX.ini (BGSet, plus
 # BackglassOutput/ScoreViewOutput based on which roles got assigned).
+# With more than one monitor, Save also writes vpinfe's own
+# tablescreenid/bgscreenid/dmdscreenid in vpinfe.ini to each role's
+# monitor ID.
 #
 # Run as a launch.sh "shell" client, same pattern as the debug terminal
 # (`launch.sh shell /usr/bin/foot`) -- Hyprland needs to already be up
@@ -45,6 +48,9 @@ ROLE_WORKSPACE = {"Table": 1, "Backglass": 2, "DMD": 3}
 
 VPX_BINARY = "/opt/vpinball/VPinballX_BGFX"
 VPX_INI_PATH = os.path.expanduser("~/.local/share/VPinballX/10.8/VPinballX.ini")
+
+VPINFE_INI_PATH = os.path.expanduser("~/.config/vpinfe/vpinfe.ini")
+VPINFE_INI_KEY = {"Table": "tablescreenid", "Backglass": "bgscreenid", "DMD": "dmdscreenid"}
 
 
 def ensure_instance_signature():
@@ -255,6 +261,26 @@ def save_vpinball_settings(mode, role_to_monitor):
         f.write(content)
 
 
+def save_vpinfe_settings(role_to_monitor, id_by_monitor):
+    # Only called with more than one monitor detected -- with a single
+    # screen everything already renders there regardless of these ids,
+    # so there's nothing meaningful to set. vpinfe.ini ships baked into
+    # the image (home/vpinos/.config/vpinfe/), so unlike VPinballX.ini
+    # there's no "generate a default first" step -- if it's missing,
+    # that's a real problem worth surfacing, not something to paper
+    # over by writing a fresh file with unknown other defaults missing.
+    if not os.path.exists(VPINFE_INI_PATH):
+        raise RuntimeError(f"{VPINFE_INI_PATH} not found")
+    with open(VPINFE_INI_PATH) as f:
+        content = f.read()
+    for role, key in VPINFE_INI_KEY.items():
+        name = role_to_monitor.get(role)
+        if name:
+            content = set_ini_value(content, key, id_by_monitor[name])
+    with open(VPINFE_INI_PATH, "w") as f:
+        f.write(content)
+
+
 
 # Dark, card-based palette -- deliberately not the default ttk "clam"
 # look (flat gray buttons/labels on plain black), which is what made
@@ -328,14 +354,27 @@ def run_gui(monitors):
         style="Sub.TLabel",
     ).pack(pady=(0, 28))
 
+    # One grid for the header row AND every monitor row, not a separate
+    # header Frame with guessed padx offsets -- confirmed directly that
+    # guessed offsets don't track each row's actual (content-dependent)
+    # widths, so the header drifted out of alignment with the cards
+    # below it. A single shared grid with fixed column minsizes is what
+    # actually keeps them lined up regardless of content width.
     content = tk.Frame(root, bg=BG)
     content.pack(padx=60)
+    content.grid_columnconfigure(0, minsize=460, weight=1)
+    content.grid_columnconfigure(1, minsize=190)
+    content.grid_columnconfigure(2, minsize=300)
 
-    col_headers = tk.Frame(content, bg=BG)
-    col_headers.pack(fill="x", pady=(0, 6))
-    ttk.Label(col_headers, text="MONITOR", style="Sub.TLabel").grid(row=0, column=0, sticky="w", padx=(18, 0))
-    ttk.Label(col_headers, text="IDENTIFY", style="Sub.TLabel").grid(row=0, column=1, padx=(160, 0))
-    ttk.Label(col_headers, text="ROLE", style="Sub.TLabel").grid(row=0, column=2, padx=(60, 18))
+    ttk.Label(content, text="MONITOR", style="Sub.TLabel").grid(
+        row=0, column=0, sticky="w", padx=(18, 0), pady=(0, 8)
+    )
+    ttk.Label(content, text="IDENTIFY", style="Sub.TLabel").grid(
+        row=0, column=1, sticky="w", padx=(18, 0), pady=(0, 8)
+    )
+    ttk.Label(content, text="ROLE", style="Sub.TLabel").grid(
+        row=0, column=2, sticky="w", padx=(18, 0), pady=(0, 8)
+    )
 
     show_buttons = []
     role_vars = []
@@ -354,18 +393,27 @@ def run_gui(monitors):
         for b in show_buttons:
             b.configure(state="normal")
 
-    for mon in ordered:
-        row_frame = tk.Frame(content, bg=CARD_BG, highlightbackground=BORDER, highlightthickness=1)
-        row_frame.pack(fill="x", pady=5)
+    for i, mon in enumerate(ordered):
+        r = i + 1
+        cell_kwargs = {"bg": CARD_BG, "highlightbackground": BORDER, "highlightthickness": 1}
 
-        info = tk.Frame(row_frame, bg=CARD_BG)
-        info.pack(side="left", fill="x", expand=True, padx=18, pady=16)
-        tk.Label(info, text=mon["name"], bg=CARD_BG, fg=TEXT, font=("sans", 17, "bold")).pack(anchor="w")
+        info_cell = tk.Frame(content, **cell_kwargs)
+        info_cell.grid(row=r, column=0, sticky="nsew", pady=4)
+        info = tk.Frame(info_cell, bg=CARD_BG)
+        info.pack(anchor="w", padx=18, pady=16)
+        name_row = tk.Frame(info, bg=CARD_BG)
+        name_row.pack(anchor="w")
+        tk.Label(name_row, text=mon["name"], bg=CARD_BG, fg=TEXT, font=("sans", 17, "bold")).pack(side="left")
+        tk.Label(
+            name_row, text=f"  (ID {mon['id']})", bg=CARD_BG, fg=MUTED, font=("sans", 12)
+        ).pack(side="left")
         sub = f"{mon.get('description', '')}   |   {geometry_of(mon)}"
         tk.Label(info, text=sub, bg=CARD_BG, fg=MUTED, font=("sans", 11)).pack(anchor="w", pady=(2, 0))
 
-        btn = ttk.Button(row_frame, text="SHOW", style="Show.TButton")
-        btn.pack(side="left", padx=18)
+        show_cell = tk.Frame(content, **cell_kwargs)
+        show_cell.grid(row=r, column=1, sticky="nsew", pady=4)
+        btn = ttk.Button(show_cell, text="SHOW", style="Show.TButton")
+        btn.pack(padx=18, pady=16, anchor="w")
         btn.configure(command=lambda m=mon: on_show(m))
         show_buttons.append(btn)
 
@@ -378,9 +426,11 @@ def run_gui(monitors):
         # Radio buttons are just widgets drawn inside this same window,
         # never a separate one, so there's nothing extra for the
         # catch-all to catch.
+        role_cell = tk.Frame(content, **cell_kwargs)
+        role_cell.grid(row=r, column=2, sticky="nsew", pady=4)
         role_var = tk.StringVar(value=existing_roles.get(mon["name"], ""))
-        radios = tk.Frame(row_frame, bg=CARD_BG)
-        radios.pack(side="left", padx=18)
+        radios = tk.Frame(role_cell, bg=CARD_BG)
+        radios.pack(padx=12, pady=16, anchor="w")
         for col, role in enumerate(ROLE_WORKSPACE.keys()):
             ttk.Radiobutton(
                 radios, text=role, value=role, variable=role_var, style="TRadiobutton"
@@ -392,11 +442,16 @@ def run_gui(monitors):
     # actually get their own separate vpinball window
     # (`BackglassOutput`/`ScoreViewOutput` -- only meaningful once
     # there's a Backglass/DMD monitor to put them on).
-    mode_card = tk.Frame(content, bg=BG)
-    mode_card.pack(fill="x", pady=(24, 0))
-    ttk.Label(mode_card, text="VPinball Mode", style="Section.TLabel").pack(anchor="w", padx=18)
+    # Parented to `root`, not `content` -- `content` is a pure grid
+    # container now (see the row-alignment fix above), and Tk refuses
+    # to mix `pack` and `grid` on children of the same parent
+    # ("cannot use geometry manager pack inside ... which already has
+    # slaves managed by grid"), confirmed directly by a real crash.
+    mode_card = tk.Frame(root, bg=BG)
+    mode_card.pack(pady=(24, 0))
+    ttk.Label(mode_card, text="VPinball Mode", style="Section.TLabel").pack(anchor="center")
     mode_frame = tk.Frame(mode_card, bg=BG)
-    mode_frame.pack(anchor="w", padx=18, pady=(8, 0))
+    mode_frame.pack(anchor="center", pady=(8, 0))
     vpinball_mode_var = tk.StringVar(value=parse_existing_vpinball_mode())
     for col, mode in enumerate(("Desktop", "Cabinet")):
         ttk.Radiobutton(
@@ -443,10 +498,21 @@ def run_gui(monitors):
             )
             return
 
+        saved = "hyprland.conf and VPinballX.ini"
+        if len(ordered) > 1:
+            id_by_monitor = {mon["name"]: mon["id"] for mon in ordered}
+            try:
+                save_vpinfe_settings(role_to_monitor, id_by_monitor)
+                saved += " and vpinfe.ini"
+            except (OSError, RuntimeError) as exc:
+                status.configure(
+                    text=f"Saved {saved}, but ERROR saving vpinfe.ini: {exc}",
+                    foreground="#f85149",
+                )
+                return
+
         hyprctl("reload")
-        status.configure(
-            text="Saved to hyprland.conf and VPinballX.ini, applied.", foreground=SUCCESS_HOVER
-        )
+        status.configure(text=f"Saved to {saved}, applied.", foreground=SUCCESS_HOVER)
 
     button_row = tk.Frame(root, bg=BG)
     button_row.pack(pady=(8, 30))
