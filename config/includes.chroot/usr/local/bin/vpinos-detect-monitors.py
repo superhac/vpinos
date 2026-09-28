@@ -670,25 +670,6 @@ def run_gui(monitors):
             wraplength=DESC_WRAP, justify="left",
         ).pack(anchor="w", pady=(2, 0))
 
-    ttk.Label(cabinet_extra, text="Full DMD", style="Section.TLabel").pack(
-        anchor="w", padx=18, pady=(20, 8)
-    )
-    fulldmd_row = tk.Frame(cabinet_extra, bg=CARD_BG, highlightbackground=BORDER, highlightthickness=1)
-    fulldmd_row.pack(fill="x", pady=4)
-    fulldmd_var = tk.BooleanVar(value=parse_existing_fulldmd())
-    ttk.Checkbutton(
-        fulldmd_row, variable=fulldmd_var, style="TCheckbutton"
-    ).pack(side="left", padx=(18, 12), pady=16, anchor="n")
-    fulldmd_text_col = tk.Frame(fulldmd_row, bg=CARD_BG)
-    fulldmd_text_col.pack(side="left", padx=(0, 18), pady=16, fill="x", expand=True)
-    tk.Label(fulldmd_text_col, text="Full DMD", bg=CARD_BG, fg=TEXT, font=("sans", 15, "bold")).pack(
-        anchor="w"
-    )
-    tk.Label(
-        fulldmd_text_col, text=FULLDMD_DESCRIPTION, bg=CARD_BG, fg=MUTED, font=("sans", 11),
-        wraplength=DESC_WRAP, justify="left",
-    ).pack(anchor="w", pady=(2, 0))
-
     ttk.Label(cabinet_extra, text="Screen Dimensions", style="Section.TLabel").pack(
         anchor="w", padx=18, pady=(20, 2)
     )
@@ -716,6 +697,25 @@ def run_gui(monitors):
         )
         entry.pack(side="left", padx=(0, 18))
         screen_field_vars[key] = field_var
+
+    ttk.Label(cabinet_extra, text="Full DMD", style="Section.TLabel").pack(
+        anchor="w", padx=18, pady=(20, 8)
+    )
+    fulldmd_row = tk.Frame(cabinet_extra, bg=CARD_BG, highlightbackground=BORDER, highlightthickness=1)
+    fulldmd_row.pack(fill="x", pady=4)
+    fulldmd_var = tk.BooleanVar(value=parse_existing_fulldmd())
+    ttk.Checkbutton(
+        fulldmd_row, variable=fulldmd_var, style="TCheckbutton"
+    ).pack(side="left", padx=(18, 12), pady=16, anchor="n")
+    fulldmd_text_col = tk.Frame(fulldmd_row, bg=CARD_BG)
+    fulldmd_text_col.pack(side="left", padx=(0, 18), pady=16, fill="x", expand=True)
+    tk.Label(fulldmd_text_col, text="Full DMD", bg=CARD_BG, fg=TEXT, font=("sans", 15, "bold")).pack(
+        anchor="w"
+    )
+    tk.Label(
+        fulldmd_text_col, text=FULLDMD_DESCRIPTION, bg=CARD_BG, fg=MUTED, font=("sans", 11),
+        wraplength=DESC_WRAP, justify="left",
+    ).pack(anchor="w", pady=(2, 0))
 
     status = ttk.Label(root_, text="", style="TLabel")
     status.pack(pady=(24, 0))
