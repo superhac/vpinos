@@ -14,12 +14,14 @@
 # BackglassOutput/ScoreViewOutput based on which roles got assigned).
 # With more than one monitor, Save also writes vpinfe's own
 # tablescreenid/bgscreenid/dmdscreenid in vpinfe.ini to each role's
-# monitor ID. Selecting Cabinet mode reveals two more sections
-# (CabinetAutofitMode, and ScreenWidth/ScreenHeight/ScreenInclination),
-# also written to VPinballX.ini -- hidden entirely in Desktop mode,
-# since VPinballX.ini's own comments say they only matter in Cabinet
-# mode. Save also always sets Priority.ScoreView/PUP/B2SLegacyDMD to
-# fixed values, regardless of mode or role assignment.
+# monitor ID. Selecting Cabinet mode reveals three more sections
+# (CabinetAutofitMode; a Full DMD on/off checkbox for
+# ScoreViewDMDOverlay/ScoreViewDMDAutoPos/B2SHideGrill; and
+# ScreenWidth/ScreenHeight/ScreenInclination), all written to
+# VPinballX.ini -- hidden entirely in Desktop mode, since VPinballX.ini's
+# own comments say they only matter in Cabinet mode. Save also always
+# sets Priority.ScoreView/PUP/B2SLegacyDMD to fixed values, regardless
+# of mode or role assignment.
 #
 # Run as a launch.sh "shell" client, same pattern as the debug terminal
 # (`launch.sh shell /usr/bin/foot`) -- Hyprland needs to already be up
@@ -106,6 +108,21 @@ SCREEN_DIMENSION_FIELDS = [
         "table looks right from where you stand.",
     ),
 ]
+
+# Single on/off toggle (Cabinet mode only) -- checked writes all three
+# keys as 1, unchecked writes all three as 0 (both states explicit, same
+# as BGSet/BackglassOutput/ScoreViewOutput above, so unchecking it after
+# a previous save actually takes effect instead of leaving stale 1s).
+# Description inferred from the key names, not supplied -- overlays the
+# DMD content onto the backglass with automatic positioning, and hides
+# the backglass image's own printed DMD grill graphic (for a real
+# physical DMD/no separate DMD window, rather than a 3-screen setup).
+FULLDMD_KEYS = ["ScoreViewDMDOverlay", "ScoreViewDMDAutoPos", "B2SHideGrill"]
+FULLDMD_DESCRIPTION = (
+    "Overlays the DMD content directly onto the backglass image with automatic "
+    "positioning, and hides the backglass image's own printed DMD grill graphic "
+    "-- for a real physical DMD device, not a separate DMD monitor/window."
+)
 
 VPINFE_INI_PATH = os.path.expanduser("~/.config/vpinfe/vpinfe.ini")
 VPINFE_INI_KEY = {"Table": "tablescreenid", "Backglass": "bgscreenid", "DMD": "dmdscreenid"}
@@ -329,7 +346,24 @@ def parse_existing_screen_field(key):
     return m.group(1) if m else ""
 
 
-def save_vpinball_settings(mode, role_to_monitor, cabinet_autofit_mode=None, screen_fields=None):
+def parse_existing_fulldmd():
+    # "On" only if every key is already 1 -- a partial/mixed state (e.g.
+    # hand-edited) is treated as off, not guessed at.
+    try:
+        with open(VPX_INI_PATH) as f:
+            content = f.read()
+    except OSError:
+        return False
+    for key in FULLDMD_KEYS:
+        m = re.search(rf"^[ \t]*{re.escape(key)}[ \t]*=[ \t]*(\d+)", content, re.IGNORECASE | re.MULTILINE)
+        if not m or m.group(1).strip() != "1":
+            return False
+    return True
+
+
+def save_vpinball_settings(
+    mode, role_to_monitor, cabinet_autofit_mode=None, screen_fields=None, fulldmd=None
+):
     ensure_vpinballx_ini()
     with open(VPX_INI_PATH) as f:
         content = f.read()
@@ -352,6 +386,9 @@ def save_vpinball_settings(mode, role_to_monitor, cabinet_autofit_mode=None, scr
             value = value.strip()
             if value:
                 content = set_ini_value(content, key, value)
+        if fulldmd is not None:
+            for key in FULLDMD_KEYS:
+                content = set_ini_value(content, key, 1 if fulldmd else 0)
     with open(VPX_INI_PATH, "w") as f:
         f.write(content)
 
@@ -439,6 +476,12 @@ def run_gui(monitors):
     style.map(
         "Mode.TRadiobutton",
         background=[("active", BG)],
+        indicatorcolor=[("selected", ACCENT), ("!selected", BORDER)],
+    )
+    style.configure("TCheckbutton", background=CARD_BG, foreground=TEXT, font=("sans", 13))
+    style.map(
+        "TCheckbutton",
+        background=[("active", CARD_BG)],
         indicatorcolor=[("selected", ACCENT), ("!selected", BORDER)],
     )
 
@@ -627,6 +670,25 @@ def run_gui(monitors):
             wraplength=DESC_WRAP, justify="left",
         ).pack(anchor="w", pady=(2, 0))
 
+    ttk.Label(cabinet_extra, text="Full DMD", style="Section.TLabel").pack(
+        anchor="w", padx=18, pady=(20, 8)
+    )
+    fulldmd_row = tk.Frame(cabinet_extra, bg=CARD_BG, highlightbackground=BORDER, highlightthickness=1)
+    fulldmd_row.pack(fill="x", pady=4)
+    fulldmd_var = tk.BooleanVar(value=parse_existing_fulldmd())
+    ttk.Checkbutton(
+        fulldmd_row, variable=fulldmd_var, style="TCheckbutton"
+    ).pack(side="left", padx=(18, 12), pady=16, anchor="n")
+    fulldmd_text_col = tk.Frame(fulldmd_row, bg=CARD_BG)
+    fulldmd_text_col.pack(side="left", padx=(0, 18), pady=16, fill="x", expand=True)
+    tk.Label(fulldmd_text_col, text="Full DMD", bg=CARD_BG, fg=TEXT, font=("sans", 15, "bold")).pack(
+        anchor="w"
+    )
+    tk.Label(
+        fulldmd_text_col, text=FULLDMD_DESCRIPTION, bg=CARD_BG, fg=MUTED, font=("sans", 11),
+        wraplength=DESC_WRAP, justify="left",
+    ).pack(anchor="w", pady=(2, 0))
+
     ttk.Label(cabinet_extra, text="Screen Dimensions", style="Section.TLabel").pack(
         anchor="w", padx=18, pady=(20, 2)
     )
@@ -701,6 +763,7 @@ def run_gui(monitors):
                 role_to_monitor,
                 cabinet_autofit_mode=cabinet_autofit_var.get(),
                 screen_fields={key: var.get() for key, var in screen_field_vars.items()},
+                fulldmd=fulldmd_var.get(),
             )
         except (OSError, RuntimeError) as exc:
             status.configure(
