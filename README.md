@@ -88,6 +88,7 @@ e.g. for debugging — running `vpinos-menu` by hand brings it back):
 5) Launch Installer (Calamares)
 6) Launch VPXConfig (Configuration)
 7) Boot on startup: menu          (installed systems only)
+s) Shutdown
 q) Quit to shell
 ```
 

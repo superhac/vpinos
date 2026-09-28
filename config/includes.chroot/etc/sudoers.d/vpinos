@@ -10,3 +10,11 @@
 # NOPASSWD: ALL) so a real password is still required for anything else
 # run via sudo on an installed system.
 %sudo ALL=(ALL) NOPASSWD: /usr/local/bin/launch.sh
+
+# vpinos-menu's own Shutdown option (systemctl poweroff, not the
+# whole systemctl binary) -- a kiosk cabinet's only "log out" is
+# physically powering it off; no polkit/logind config is assumed
+# present or configured to already allow this for the local session,
+# so this is scoped explicitly, same reasoning and same narrow-scope
+# style as launch.sh above.
+%sudo ALL=(ALL) NOPASSWD: /usr/bin/systemctl poweroff

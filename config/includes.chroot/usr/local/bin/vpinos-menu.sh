@@ -166,6 +166,7 @@ while true; do
         [ -z "$cur" ] && cur=menu
         echo "7) Boot on startup: $cur"
     fi
+    echo "s) Shutdown"
     echo "q) Quit to shell"
     echo "=============================="
     printf "Select an option: "
@@ -210,6 +211,19 @@ while true; do
                 echo "Invalid option"
                 sleep 1
             fi
+            ;;
+        s|S)
+            printf "Shut down now? [y/N]: "
+            read -r confirm
+            case "$confirm" in
+                y|Y)
+                    echo "$(date -Is): menu: selected shutdown, confirmed" >>/var/log/vpinos-menu.log
+                    sudo /usr/bin/systemctl poweroff
+                    ;;
+                *)
+                    echo "$(date -Is): menu: selected shutdown, cancelled" >>/var/log/vpinos-menu.log
+                    ;;
+            esac
             ;;
         q|Q)
             break
