@@ -7,8 +7,8 @@ set -e
 # root. includes.chroot doesn't set ownership/mode reliably, so set both here.
 chown root:root /usr/local/bin/launch.sh
 chmod 0755 /usr/local/bin/launch.sh
-chmod +x /usr/local/bin/vpinos-menu.sh
-ln -sf /usr/local/bin/vpinos-menu.sh /usr/local/bin/vpinos-menu
+chmod +x /usr/local/bin/vpinos-menu.py
+ln -sf /usr/local/bin/vpinos-menu.py /usr/local/bin/vpinos-menu
 chmod +x /usr/local/bin/vpinos-detect-monitors.py
 systemctl set-default multi-user.target
 systemctl enable seatd.service
@@ -43,7 +43,7 @@ chmod 0755 /etc/systemd/system/ssh.service.d
 chmod 0644 /etc/systemd/system/ssh.service.d/vpinos-hostkeys.conf
 
 # vpinball/vpinfe/Chrome now run as `vpinos` (non-root), but launch.sh/
-# vpinos-menu.sh write to these via `>>`, and /var/log is root:root
+# vpinos-menu.py write to these, and /var/log is root:root
 # 0755 -- a non-root process can only append to a file that already
 # exists and is writable by it, not create a new one there. Root
 # (the installer, still sudo'd) can always write regardless of

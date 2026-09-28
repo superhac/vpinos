@@ -62,7 +62,7 @@ and whether changes survive a reboot.
 
 |                       | **Live** (boot the USB stick)                    | **Installed** (on the cabinet's disk)              |
 |-----------------------|--------------------------------------------------|----------------------------------------------------|
-| How you get it        | Write the ISO to a USB stick and boot it         | Run the installer from the live session (menu option 5) |
+| How you get it        | Write the ISO to a USB stick and boot it         | Run the installer from the live session ("Launch Installer") |
 | Storage               | Read-only image, changes held in RAM             | Normal read-write install                          |
 | Changes persist?      | **No** &mdash; everything resets on reboot       | Yes                                                |
 | Login                 | Console autologin as `vpinos` on tty1            | Console autologin as `vpinos` on tty1              |
@@ -77,34 +77,37 @@ the menu and follow the prompts (language, keyboard, partitioning, summary).
 
 ### The menu
 
-The menu launches automatically on login (`q` drops to a normal shell,
+The menu launches automatically on login — a [Textual](https://textual.textualize.io/)
+TUI (arrow keys + Enter to select; "Quit to shell" drops to a normal shell,
 e.g. for debugging — running `vpinos-menu` by hand brings it back):
 
 ```
-1) Monitor Detection
-2) Launch VPinball (Example Table)
-3) Launch VPinFE (Frontend)
-4) Launch Chrome only (debug)
-5) Launch Installer (Calamares)
-6) Launch VPXConfig (Configuration)
-7) Boot on startup: menu          (installed systems only)
-s) Shutdown
-q) Quit to shell
+Monitor Detection
+Launch VPinball (Example Table)
+Launch VPinFE (Frontend)
+Launch Installer (Calamares)
+Launch VPXConfig (Configuration)
+Boot on startup: menu          (installed systems only)
+Quit to shell
+Shutdown
 ```
 
-Option 1 opens a GUI for a multi-monitor cabinet: identify which output name
-(`DP-2`, `HDMI-A-1`, ...) is which physical screen, assign each one a role
-(Table/Backglass/DMD), and save the mapping straight into `hyprland.conf`.
+"Monitor Detection" opens a GUI for a multi-monitor cabinet: identify which
+output name (`DP-2`, `HDMI-A-1`, ...) is which physical screen, assign each
+one a role (Table/Backglass/DMD), and save the mapping straight into
+`hyprland.conf`.
 
-Option 6 starts **VPXConfig**, a configuration tool with a web interface: the
-menu starts its local server (`127.0.0.1:1111`, this machine only), opens it
-in a fullscreen Chrome, and stops the server as soon as you close the browser.
+"Launch VPXConfig" starts a configuration tool with a web interface: the menu
+starts its local server (`127.0.0.1:1111`, this machine only), opens it in a
+fullscreen Chrome, and stops the server as soon as you close the browser.
 
-Option 7 (installed systems only — not shown on the live image) lets you pick
-a program to launch automatically on boot instead of this menu, e.g. VPinFE
-for a cabinet that should go straight to the frontend. Picking `q` from that
+"Boot on startup" (installed systems only — not shown on the live image) lets
+you pick a program to launch automatically on boot instead of this menu, e.g.
+VPinFE for a cabinet that should go straight to the frontend. Quitting that
 program (or it exiting for any other reason) always falls back to this menu,
 never a dead end.
+
+"Shutdown" asks for confirmation, then powers the machine off.
 
 The menu is a deliberate placeholder to prove out the launch path; booting
 straight into the frontend is still to come.
@@ -137,7 +140,7 @@ Prebuilt ISOs are published on the
    or use a tool such as balenaEtcher. Double-check `/dev/sdX` first.
 3. Boot the target machine from the stick. The image carries both BIOS
    (syslinux) and UEFI (GRUB) boot files.
-4. Run `vpinos-menu`. To install, choose option 5.
+4. Run `vpinos-menu`. To install, choose "Launch Installer (Calamares)".
 
 ### Requirements
 
@@ -259,5 +262,5 @@ are not committed.
 **Beta.** Early and actively developed. The build, live boot, launch path
 (Hyprland &rarr; vpinball / vpinfe) and installer are working end to end.
 Booting straight into the frontend on an installed cabinet is now
-opt-in (menu option 7). Still ahead: persistence for the live medium, and
+opt-in ("Boot on startup"). Still ahead: persistence for the live medium, and
 narrowing GPU/firmware support once the target hardware is settled.
