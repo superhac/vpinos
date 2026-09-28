@@ -18,7 +18,8 @@
 # (CabinetAutofitMode, and ScreenWidth/ScreenHeight/ScreenInclination),
 # also written to VPinballX.ini -- hidden entirely in Desktop mode,
 # since VPinballX.ini's own comments say they only matter in Cabinet
-# mode.
+# mode. Save also always sets Priority.ScoreView/PUP/B2SLegacyDMD to
+# fixed values, regardless of mode or role assignment.
 #
 # Run as a launch.sh "shell" client, same pattern as the debug terminal
 # (`launch.sh shell /usr/bin/foot`) -- Hyprland needs to already be up
@@ -335,6 +336,12 @@ def save_vpinball_settings(mode, role_to_monitor, cabinet_autofit_mode=None, scr
     content = set_ini_value(content, "BGSet", 1 if mode == "Cabinet" else 0)
     content = set_ini_value(content, "BackglassOutput", 1 if "Backglass" in role_to_monitor else 0)
     content = set_ini_value(content, "ScoreViewOutput", 1 if "DMD" in role_to_monitor else 0)
+    # Fixed defaults every cabinet should have, regardless of
+    # Desktop/Cabinet mode or which roles are assigned -- requested
+    # directly, not derived from any other setting here.
+    content = set_ini_value(content, "Priority.ScoreView", 1)
+    content = set_ini_value(content, "Priority.PUP", 3)
+    content = set_ini_value(content, "Priority.B2SLegacyDMD", 2)
     # Cabinet-only extras -- left untouched entirely in Desktop mode
     # rather than overwritten with blank/default values, since they
     # only matter once Cabinet mode is actually selected.
