@@ -77,19 +77,19 @@ the menu and follow the prompts (language, keyboard, partitioning, summary).
 
 ### The menu
 
-The menu launches automatically on login — a [Textual](https://textual.textualize.io/)
-TUI (arrow keys + Enter to select; "Quit to shell" drops to a normal shell,
-e.g. for debugging — running `vpinos-menu` by hand brings it back):
+The menu launches automatically on login — a plain numbered shell prompt
+("Quit to shell" drops to a normal shell, e.g. for debugging — running
+`vpinos-menu` by hand brings it back):
 
 ```
-Configuration
-Launch VPinball (Example Table)
-Launch VPinFE (Frontend)
-Launch Installer (Calamares)
-Launch VPXConfig (Configuration)
-Boot on startup: menu          (installed systems only)
-Quit to shell
-Shutdown
+1) Configuration
+2) Launch VPinball (Example Table)
+3) Launch VPinFE (Frontend)
+5) Launch Installer (Calamares)
+6) Launch VPXConfig (Configuration)
+7) Boot on startup: menu       (installed systems only)
+q) Quit to shell
+s) Shutdown
 ```
 
 "Configuration" (`vpinos-config.py` — was "Monitor Detection" until it grew

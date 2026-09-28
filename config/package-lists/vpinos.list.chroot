@@ -52,15 +52,6 @@ wlr-randr
 # hyprland.conf) like Calamares does.
 python3-tk
 
-# python3-textual: TUI framework, used by vpinos-menu.py (the console
-# menu -- was a plain POSIX sh script, rewritten for a nicer-looking,
-# arrow-key-navigable interface). Pulls in python3-rich/-markdown-it/
-# -platformdirs/-typing-extensions as its own dependencies, nothing
-# extra needed here. Real Debian trixie package, version 2.1.2-1 at
-# the time this was added -- confirmed directly (downloaded and
-# extracted the .deb, not assumed) before writing any code against it.
-python3-textual
-
 # input / audio
 alsa-utils
 

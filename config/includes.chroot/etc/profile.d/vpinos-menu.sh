@@ -30,7 +30,7 @@ if [ -z "$SSH_CONNECTION" ] && [ -t 0 ]; then
     #
     # To add a new boot-on-startup program: see the
     # `manage-boot-programs` skill in notes/skills/ -- it walks through
-    # this case arm, the matching submenu entry in vpinos-menu.py, the
+    # this case arm, the matching submenu entry in vpinos-menu.sh, the
     # audit check, and the docs together, so they can't drift out of
     # sync with each other.
     case "$(cat /etc/vpinos/boot-mode 2>/dev/null)" in

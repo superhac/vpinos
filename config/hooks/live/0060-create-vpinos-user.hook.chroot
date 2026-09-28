@@ -13,7 +13,7 @@ set -e
 # device access (seatd's default config already grants socket access
 # to the `video` group -- confirmed via /etc/default/seatd -- so no
 # custom seatd config needed); sudo for the installer's actual root
-# requirement (partitioning) -- see vpinos-menu.py, which only sudo's
+# requirement (partitioning) -- see vpinos-menu.sh, which only sudo's
 # the installer option now, not vpinball/vpinfe/Chrome; dialout+plugdev
 # for direct access to serial/USB cabinet I/O hardware (e.g. LED/coin
 # controllers) without needing root -- both are standard Debian groups

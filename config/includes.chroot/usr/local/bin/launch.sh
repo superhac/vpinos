@@ -8,7 +8,7 @@
 # `vpinos` user for vpinball/vpinfe/Chrome -- seatd's default config
 # already grants DRM/seat access to `video`-group members, no root
 # needed; still `sudo`'d for the installer specifically, which genuinely
-# needs root for partitioning -- see vpinos-menu.py); not a systemd
+# needs root for partitioning -- see vpinos-menu.sh); not a systemd
 # service. (Was weston until this was migrated to Hyprland -- see
 # notes/vpinos.md step 5 for why, and for what carried over unchanged:
 # this whole tty-session-instead-of-a-service architecture, the client
