@@ -82,7 +82,7 @@ TUI (arrow keys + Enter to select; "Quit to shell" drops to a normal shell,
 e.g. for debugging — running `vpinos-menu` by hand brings it back):
 
 ```
-Monitor Detection
+Configuration
 Launch VPinball (Example Table)
 Launch VPinFE (Frontend)
 Launch Installer (Calamares)
@@ -92,7 +92,8 @@ Quit to shell
 Shutdown
 ```
 
-"Monitor Detection" opens a GUI for a multi-monitor cabinet: identify which
+"Configuration" (`vpinos-config.py` — was "Monitor Detection" until it grew
+past just monitors) opens a GUI for a multi-monitor cabinet: identify which
 output name (`DP-2`, `HDMI-A-1`, ...) is which physical screen, assign each
 one a role (Table/Backglass/DMD), and save the mapping straight into
 `hyprland.conf`.

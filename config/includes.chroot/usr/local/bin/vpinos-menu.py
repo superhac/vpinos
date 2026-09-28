@@ -203,7 +203,7 @@ class VPinOSMenu(App[None]):
         menu = self.query_one("#main_menu", OptionList)
         menu.clear_options()
         options = [
-            Option("Monitor Detection", id="monitor_detection"),
+            Option("Configuration", id="configuration"),
             Option("Launch VPinball (Example Table)", id="vpinball"),
             Option("Launch VPinFE (Frontend)", id="vpinfe"),
             # "Launch Chrome only (debug)" hidden for now -- the
@@ -254,9 +254,9 @@ class VPinOSMenu(App[None]):
         self.set_status("")
         self.refresh_menu()
 
-    def action_select_monitor_detection(self) -> None:
+    def action_select_configuration(self) -> None:
         self.run_client(
-            "monitor detection", LAUNCH, "shell", "/usr/local/bin/vpinos-detect-monitors.py"
+            "configuration", LAUNCH, "shell", "/usr/local/bin/vpinos-config.py"
         )
 
     def action_select_vpinball(self) -> None:

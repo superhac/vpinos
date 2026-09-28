@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-# Monitor-mapping tool: enumerate connected outputs via hyprctl, let the
+# Cabinet configuration tool -- was vpinos-detect-monitors.py/"Monitor
+# Detection" in the menu, renamed once it grew well past just
+# monitors (VPinball Mode, Cabinet Autofit, Full DMD, Screen
+# Dimensions, vpinfe's own screen ids). Starts with the original
+# monitor-mapping piece: enumerate connected outputs via hyprctl, let the
 # cabinet builder click SHOW next to a monitor to display its info
 # fullscreen on the physical screen it actually is (so the output name
 # can be matched to a real screen), pick a role (Table/Backglass/DMD)
@@ -27,7 +31,7 @@
 # (`launch.sh shell /usr/bin/foot`) -- Hyprland needs to already be up
 # with WAYLAND_DISPLAY set, which launch.sh's own launch_client() handles;
 # this script doesn't start Hyprland itself:
-#   /usr/local/bin/launch.sh shell /usr/local/bin/vpinos-detect-monitors.py
+#   /usr/local/bin/launch.sh shell /usr/local/bin/vpinos-config.py
 #
 # The menu itself is a real GUI (tkinter, via python3-tk) rather than a
 # terminal menu -- runs over Xwayland (`xwayland { enabled = true }` is
@@ -491,7 +495,7 @@ def run_gui(monitors):
     existing_roles = parse_existing_roles()
 
     root = tk.Tk()
-    root.title("VPinOS -- Monitor Detection")
+    root.title("VPinOS -- Configuration")
     root.configure(bg=BG)
     root.attributes("-fullscreen", True)
 
@@ -580,7 +584,7 @@ def run_gui(monitors):
 
     root_ = scroll_frame
 
-    ttk.Label(root_, text="VPinOS Monitor Setup", style="Header.TLabel").pack(pady=(36, 4))
+    ttk.Label(root_, text="VPinOS Configuration", style="Header.TLabel").pack(pady=(36, 4))
     ttk.Label(
         root_,
         text="Press SHOW to identify a screen, then select its role.",
@@ -854,7 +858,7 @@ def main():
         print(f"ERROR: {exc}", file=sys.stderr)
         print(
             "Is Hyprland running? Run this via:\n"
-            "  /usr/local/bin/launch.sh shell /usr/local/bin/vpinos-detect-monitors.py",
+            "  /usr/local/bin/launch.sh shell /usr/local/bin/vpinos-config.py",
             file=sys.stderr,
         )
         sys.exit(1)

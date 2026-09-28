@@ -9,7 +9,7 @@ chown root:root /usr/local/bin/launch.sh
 chmod 0755 /usr/local/bin/launch.sh
 chmod +x /usr/local/bin/vpinos-menu.py
 ln -sf /usr/local/bin/vpinos-menu.py /usr/local/bin/vpinos-menu
-chmod +x /usr/local/bin/vpinos-detect-monitors.py
+chmod +x /usr/local/bin/vpinos-config.py
 systemctl set-default multi-user.target
 systemctl enable seatd.service
 systemctl enable NetworkManager.service
@@ -58,7 +58,7 @@ chown vpinos:vpinos /var/log/vpinos-launch.log /var/log/vpinos-hyprland.log /var
 chown vpinos:vpinos /etc/vpinos/boot-mode
 chmod 0644 /etc/vpinos/boot-mode
 
-# Same reasoning as boot-mode above: vpinos-detect-monitors.py's Save
+# Same reasoning as boot-mode above: vpinos-config.py's Save
 # button rewrites the vpinos-workspace-monitors block in hyprland.conf
 # directly, as `vpinos`, no sudo -- not a privilege boundary, just a
 # user-facing display-layout choice, so vpinos ownership is correct
