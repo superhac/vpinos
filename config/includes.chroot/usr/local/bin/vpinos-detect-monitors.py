@@ -118,6 +118,7 @@ SCREEN_DIMENSION_FIELDS = [
 # the backglass image's own printed DMD grill graphic (for a real
 # physical DMD/no separate DMD window, rather than a 3-screen setup).
 FULLDMD_KEYS = ["ScoreViewDMDOverlay", "ScoreViewDMDAutoPos", "B2SHideGrill"]
+FULLDMD_SECTION = "Plugin.B2SLegacy"
 FULLDMD_DESCRIPTION = (
     "Overlays the DMD content directly onto the backglass image with automatic "
     "positioning, and hides the backglass image's own printed DMD grill graphic "
@@ -304,12 +305,51 @@ def set_ini_value(content, key, value):
     # ensure_vpinballx_ini), so these keys already exist with their
     # defaults by the time this runs -- a straight in-place replace of
     # the existing line, keyed off the exact key name.
+    #
+    # The "key not found" fallback below appends to the very *end* of
+    # the file, with no awareness of `[Section]` headers at all --
+    # confirmed directly this is wrong for a key vpinball's own
+    # defaults don't already include: it lands after whatever the
+    # *last* section in the file happens to be, not necessarily the
+    # section vpinball actually reads that key from, so vpinball
+    # silently never sees it. Safe only for keys already present in
+    # vpinball's own generated defaults (confirmed for everything this
+    # tool sets except Priority.*, which needs
+    # set_ini_value_in_section instead -- see there for why).
     pattern = re.compile(rf"^([ \t]*{re.escape(key)}[ \t]*=[ \t]*).*$", re.IGNORECASE | re.MULTILINE)
     new_content, count = pattern.subn(rf"\g<1>{value}", content, count=1)
     if count == 0:
         sep = "" if not content or content.endswith("\n") else "\n"
         new_content = f"{content}{sep}{key} = {value}\n"
     return new_content
+
+
+def set_ini_value_in_section(content, section, key, value):
+    # Same in-place replace as set_ini_value if the key already exists
+    # anywhere in the file. If it doesn't, though -- confirmed directly
+    # on a real boot: Priority.ScoreView/PUP/B2SLegacyDMD aren't part of
+    # vpinball's own auto-generated defaults, so set_ini_value's blind
+    # end-of-file append landed them under the wrong section entirely,
+    # and vpinball silently never applied them -- insert a fresh line
+    # right after the `[section]` header instead (creating that section
+    # at the end of the file if it's missing too), so a brand-new key
+    # actually lands where vpinball expects to find it.
+    pattern = re.compile(rf"^([ \t]*{re.escape(key)}[ \t]*=[ \t]*).*$", re.IGNORECASE | re.MULTILINE)
+    new_content, count = pattern.subn(rf"\g<1>{value}", content, count=1)
+    if count > 0:
+        return new_content
+
+    section_pattern = re.compile(rf"^\[{re.escape(section)}\][ \t]*\r?$", re.IGNORECASE | re.MULTILINE)
+    m = section_pattern.search(content)
+    if m:
+        insert_at = m.end()
+        # Land right after the section header's own newline, not mid-line.
+        newline_at = content.find("\n", insert_at)
+        insert_at = newline_at + 1 if newline_at != -1 else len(content)
+        return content[:insert_at] + f"{key} = {value}\n" + content[insert_at:]
+
+    sep = "" if not content or content.endswith("\n") else "\n"
+    return f"{content}{sep}\n[{section}]\n{key} = {value}\n"
 
 
 def parse_existing_vpinball_mode():
@@ -372,10 +412,14 @@ def save_vpinball_settings(
     content = set_ini_value(content, "ScoreViewOutput", 1 if "DMD" in role_to_monitor else 0)
     # Fixed defaults every cabinet should have, regardless of
     # Desktop/Cabinet mode or which roles are assigned -- requested
-    # directly, not derived from any other setting here.
-    content = set_ini_value(content, "Priority.ScoreView", 1)
-    content = set_ini_value(content, "Priority.PUP", 3)
-    content = set_ini_value(content, "Priority.B2SLegacyDMD", 2)
+    # directly, not derived from any other setting here. Not part of
+    # vpinball's own auto-generated defaults (confirmed directly: they
+    # never existed in the file, so set_ini_value's blind
+    # end-of-file-append silently misfiled them under the wrong
+    # section) -- all three go under [ScoreView] specifically.
+    content = set_ini_value_in_section(content, "ScoreView", "Priority.ScoreView", 1)
+    content = set_ini_value_in_section(content, "ScoreView", "Priority.PUP", 3)
+    content = set_ini_value_in_section(content, "ScoreView", "Priority.B2SLegacyDMD", 2)
     # Cabinet-only extras -- left untouched entirely in Desktop mode
     # rather than overwritten with blank/default values, since they
     # only matter once Cabinet mode is actually selected.
@@ -387,8 +431,13 @@ def save_vpinball_settings(
             if value:
                 content = set_ini_value(content, key, value)
         if fulldmd is not None:
+            # Not part of vpinball's own auto-generated defaults either
+            # (same issue as Priority.* above) -- go under
+            # [Plugin.B2SLegacy] specifically, confirmed by the user.
             for key in FULLDMD_KEYS:
-                content = set_ini_value(content, key, 1 if fulldmd else 0)
+                content = set_ini_value_in_section(
+                    content, FULLDMD_SECTION, key, 1 if fulldmd else 0
+                )
     with open(VPX_INI_PATH, "w") as f:
         f.write(content)
 
