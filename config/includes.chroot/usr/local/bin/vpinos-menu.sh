@@ -165,13 +165,13 @@ while true; do
     echo "            VPinOS"
     echo "=============================="
     echo "1) Configuration"
-    echo "2) Launch VPinball (Example Table)"
-    echo "3) Launch VPinFE (Frontend)"
+    echo "2) Launch VPinball Example Table"
+    echo "3) VPinFE"
     # 4) Launch Chrome only (debug) -- hidden from the menu for now, but
     # the case arm below is kept working; run it directly if needed:
     # /usr/local/bin/launch.sh chrome /usr/bin/google-chrome --kiosk ...
-    echo "5) Launch Installer (Calamares)"
-    echo "6) Launch VPXConfig (Configuration)"
+    echo "5) Install VPinOS"
+    echo "6) VPXConfig (Advanced VPinball Configuration)"
     if is_installed; then
         cur=$(cat /etc/vpinos/boot-mode 2>/dev/null)
         [ -z "$cur" ] && cur=menu

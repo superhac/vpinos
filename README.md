@@ -72,7 +72,7 @@ and whether changes survive a reboot.
 | Good for              | Trying it, hardware checks, running the installer | Daily use on the cabinet                          |
 
 The **live** session is the way to try VPinOS on a machine without touching
-its disks. To make it permanent, pick **Launch Installer (Calamares)** from
+its disks. To make it permanent, pick **Install VPinOS** from
 the menu and follow the prompts (language, keyboard, partitioning, summary).
 
 ### The menu
@@ -83,10 +83,10 @@ The menu launches automatically on login — a plain numbered shell prompt
 
 ```
 1) Configuration
-2) Launch VPinball (Example Table)
-3) Launch VPinFE (Frontend)
-5) Launch Installer (Calamares)
-6) Launch VPXConfig (Configuration)
+2) Launch VPinball Example Table
+3) VPinFE
+5) Install VPinOS
+6) VPXConfig (Advanced VPinball Configuration)
 7) Boot on startup: menu       (installed systems only)
 q) Quit to shell
 s) Shutdown
@@ -98,7 +98,7 @@ output name (`DP-2`, `HDMI-A-1`, ...) is which physical screen, assign each
 one a role (Table/Backglass/DMD), and save the mapping straight into
 `hyprland.conf`.
 
-"Launch VPXConfig" starts a configuration tool with a web interface: the menu
+"VPXConfig" starts a configuration tool with a web interface: the menu
 starts its local server (`127.0.0.1:1111`, this machine only), opens it in a
 fullscreen Chrome, and stops the server as soon as you close the browser.
 
@@ -141,7 +141,7 @@ Prebuilt ISOs are published on the
    or use a tool such as balenaEtcher. Double-check `/dev/sdX` first.
 3. Boot the target machine from the stick. The image carries both BIOS
    (syslinux) and UEFI (GRUB) boot files.
-4. Run `vpinos-menu`. To install, choose "Launch Installer (Calamares)".
+4. Run `vpinos-menu`. To install, choose "Install VPinOS".
 
 ### Requirements
 
