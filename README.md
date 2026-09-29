@@ -83,11 +83,13 @@ The menu launches automatically on login — a plain numbered shell prompt
 
 ```
 1) Configuration
-2) Launch VPinball Example Table
-3) VPinFE
-5) Install VPinOS
-6) VPXConfig (Advanced VPinball Configuration)
-7) Boot on startup: menu       (installed systems only)
+2) Network Settings
+3) Launch VPinball Example Table
+4) VPinFE
+5) VPinFE Map Controls
+7) Install VPinOS
+8) VPXConfig (Advanced VPinball Configuration)
+9) Boot on startup: menu       (installed systems only)
 q) Quit to shell
 s) Shutdown
 ```
@@ -97,6 +99,13 @@ past just monitors) opens a GUI for a multi-monitor cabinet: identify which
 output name (`DP-2`, `HDMI-A-1`, ...) is which physical screen, assign each
 one a role (Table/Backglass/DMD), and save the mapping straight into
 `hyprland.conf`.
+
+"Network Settings" runs `nmtui`, NetworkManager's own text UI — edit or
+activate Ethernet/Wi-Fi connections, and set the system hostname. Not
+Wi-Fi-specific despite the common association.
+
+"VPinFE Map Controls" runs `vpinfe --gamepadtest`, vpinfe's own
+controller-mapping mode.
 
 "VPXConfig" starts a configuration tool with a web interface: the menu
 starts its local server (`127.0.0.1:1111`, this machine only), opens it in a

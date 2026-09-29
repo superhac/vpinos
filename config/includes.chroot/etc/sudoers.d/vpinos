@@ -18,3 +18,15 @@
 # so this is scoped explicitly, same reasoning and same narrow-scope
 # style as launch.sh above.
 %sudo ALL=(ALL) NOPASSWD: /usr/bin/systemctl poweroff
+
+# vpinos-menu's Network Settings option (nmtui, editing/activating
+# NetworkManager connections) -- confirmed directly against
+# NetworkManager's own shipped polkit policy
+# (org.freedesktop.NetworkManager.settings.modify.system): its
+# <allow_active> default is auth_admin_keep, not yes, so even the
+# locally logged-in console user isn't auto-authorized, and there's no
+# polkit agent running in this raw console session to handle that
+# prompt. Running nmtui as root via sudo sidesteps this entirely --
+# polkit trivially authorizes a root-owned caller -- same reasoning and
+# same narrow-scope style as the two rules above.
+%sudo ALL=(ALL) NOPASSWD: /usr/bin/nmtui

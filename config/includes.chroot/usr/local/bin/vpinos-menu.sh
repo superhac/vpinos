@@ -165,17 +165,19 @@ while true; do
     echo "            VPinOS"
     echo "=============================="
     echo "1) Configuration"
-    echo "2) Launch VPinball Example Table"
-    echo "3) VPinFE"
-    # 4) Launch Chrome only (debug) -- hidden from the menu for now, but
+    echo "2) Network Settings"
+    echo "3) Launch VPinball Example Table"
+    echo "4) VPinFE"
+    echo "5) VPinFE Map Controls"
+    # 6) Launch Chrome only (debug) -- hidden from the menu for now, but
     # the case arm below is kept working; run it directly if needed:
     # /usr/local/bin/launch.sh chrome /usr/bin/google-chrome --kiosk ...
-    echo "5) Install VPinOS"
-    echo "6) VPXConfig (Advanced VPinball Configuration)"
+    echo "7) Install VPinOS"
+    echo "8) VPXConfig (Advanced VPinball Configuration)"
     if is_installed; then
         cur=$(cat /etc/vpinos/boot-mode 2>/dev/null)
         [ -z "$cur" ] && cur=menu
-        echo "7) Boot on startup: $cur"
+        echo "9) Boot on startup: $cur"
     fi
     echo "q) Quit to shell"
     echo "s) Shutdown"
@@ -190,32 +192,62 @@ while true; do
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
         2)
-            echo "$(date -Is): menu: selected option 2 (vpinball)" >>/var/log/vpinos-menu.log
+            # nmtui is a plain ncurses TUI (NetworkManager's own) -- no
+            # display server needed, unlike every other option here, so
+            # it runs directly in this tty rather than through
+            # launch.sh/Hyprland. Covers both Ethernet and Wi-Fi
+            # connections (edit/activate), plus the system hostname --
+            # not Wi-Fi-specific despite the common association. `sudo`
+            # (scoped in /etc/sudoers.d/vpinos) because editing
+            # connections needs polkit auth_admin_keep even for the
+            # active local session, and there's no polkit agent here to
+            # satisfy that prompt -- root bypasses it entirely.
+            echo "$(date -Is): menu: selected option 2 (network settings)" >>/var/log/vpinos-menu.log
+            sudo nmtui
+            echo "$(date -Is): menu: nmtui exited $?" >>/var/log/vpinos-menu.log
+            ;;
+        3)
+            echo "$(date -Is): menu: selected option 3 (vpinball)" >>/var/log/vpinos-menu.log
             /usr/local/bin/launch.sh vpinball \
                 /opt/vpinball/VPinballX_BGFX -play /opt/vpinball/assets/exampleTable.vpx
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
-        3)
-            echo "$(date -Is): menu: selected option 3 (vpinfe)" >>/var/log/vpinos-menu.log
+        4)
+            echo "$(date -Is): menu: selected option 4 (vpinfe)" >>/var/log/vpinos-menu.log
             /usr/local/bin/launch.sh vpinfe /opt/vpinfe/vpinfe
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
-        4)
-            echo "$(date -Is): menu: selected option 4 (chrome debug)" >>/var/log/vpinos-menu.log
+        5)
+            # --gamepadtest: vpinfe's own controller-mapping mode. Routed
+            # through launch.sh the same as plain vpinfe (option 4) --
+            # still a real Wayland client needing Hyprland up, just given
+            # an extra flag (launch.sh's own usage comment already
+            # documents `<name> <command> [args...]`, so this is nothing
+            # new). Distinct client_name for its own clearly-labeled log
+            # lines; doesn't affect hypr_config selection (only
+            # "installer"/"vpxconfig" get the windowed config, everything
+            # else -- this included -- gets the normal fullscreen kiosk
+            # one, matching plain vpinfe's own treatment).
+            echo "$(date -Is): menu: selected option 5 (vpinfe map controls)" >>/var/log/vpinos-menu.log
+            /usr/local/bin/launch.sh vpinfe-gamepadtest /opt/vpinfe/vpinfe --gamepadtest
+            echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
+            ;;
+        6)
+            echo "$(date -Is): menu: selected option 6 (chrome debug)" >>/var/log/vpinos-menu.log
             /usr/local/bin/launch.sh chrome /usr/bin/google-chrome \
                 --kiosk --enable-logging=stderr --vmodule='*ozone*=1,*wayland*=1' about:blank
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
-        5)
-            echo "$(date -Is): menu: selected option 5 (calamares installer)" >>/var/log/vpinos-menu.log
+        7)
+            echo "$(date -Is): menu: selected option 7 (calamares installer)" >>/var/log/vpinos-menu.log
             sudo /usr/local/bin/launch.sh installer /usr/bin/calamares
             echo "$(date -Is): menu: launch.sh exited $?" >>/var/log/vpinos-menu.log
             ;;
-        6)
-            echo "$(date -Is): menu: selected option 6 (vpxconfig)" >>/var/log/vpinos-menu.log
+        8)
+            echo "$(date -Is): menu: selected option 8 (vpxconfig)" >>/var/log/vpinos-menu.log
             run_vpxconfig
             ;;
-        7)
+        9)
             if is_installed; then
                 boot_mode_submenu
             else
