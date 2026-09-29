@@ -62,7 +62,7 @@ and whether changes survive a reboot.
 
 |                       | **Live** (boot the USB stick)                    | **Installed** (on the cabinet's disk)              |
 |-----------------------|--------------------------------------------------|----------------------------------------------------|
-| How you get it        | Write the ISO to a USB stick and boot it         | Run the installer from the live session ("Launch Installer") |
+| How you get it        | Write the ISO to a USB stick and boot it         | Run the installer from the live session ("Install VPinOS") |
 | Storage               | Read-only image, changes held in RAM             | Normal read-write install                          |
 | Changes persist?      | **No** &mdash; everything resets on reboot       | Yes                                                |
 | Login                 | Console autologin as `vpinos` on tty1            | Console autologin as `vpinos` on tty1              |
