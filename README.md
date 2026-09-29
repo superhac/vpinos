@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="config/includes.chroot/etc/calamares/branding/vpinos/logo.png" alt="VPinOS" width="260">
+ <img width="1448" height="1086" alt="vpinos_transparent" src="https://github.com/user-attachments/assets/1643c2d9-0068-491a-a7ec-98cfe80d4963" />
 </p>
 
 <h1 align="center">VPinOS</h1>
