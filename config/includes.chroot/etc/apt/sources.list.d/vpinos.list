@@ -1,6 +1,10 @@
-# VPinOS packages (vpinball, vpinfe) -- signed flat apt repository
-# published by github.com/superhac/vpinos-repo. Kept in the image, not
-# just used at build time, so an installed system updates with plain
-# `sudo apt update && sudo apt upgrade`. signed-by scopes the key below
-# to this one source only.
-deb [signed-by=/etc/apt/keyrings/vpinos.asc] https://github.com/superhac/vpinos-repo/releases/download/apt ./
+# VPinOS packages (vpinball, vpinfe, vpxconfig) -- signed flat apt
+# repository published by github.com/vpinos/deb-repo (moved from
+# github.com/superhac/vpinos-repo -- same "apt" release tag, same
+# signing key, confirmed byte-for-byte identical against the new repo's
+# own vpinos.asc before switching, so the keyring file below didn't
+# need to change, only this URL). Kept in the image, not just used at
+# build time, so an installed system updates with plain `sudo apt
+# update && sudo apt upgrade`. signed-by scopes the key below to this
+# one source only.
+deb [signed-by=/etc/apt/keyrings/vpinos.asc] https://github.com/vpinos/deb-repo/releases/download/apt ./

@@ -181,9 +181,9 @@ Prebuilt ISOs are published on the
 ## Updates: vpinball and vpinfe
 
 `vpinball`, `vpinfe` and `vpxconfig` are not compiled into the image. They come from a
-signed apt repository, [`superhac/vpinos-repo`](https://github.com/superhac/vpinos-repo),
+signed apt repository, [`vpinos/deb-repo`](https://github.com/vpinos/deb-repo),
 whose packages are built in
-[`superhac/vpinos-deb-repo`](https://github.com/superhac/vpinos-deb-repo).
+[`vpinos/deb-package-builder`](https://github.com/vpinos/deb-package-builder).
 The repository's source and public key are part of the image, so on an
 **installed** system:
 

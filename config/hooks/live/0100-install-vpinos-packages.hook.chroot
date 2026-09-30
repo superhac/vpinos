@@ -2,7 +2,7 @@
 set -e
 
 # vpinball and vpinfe come from the signed apt repository published by
-# github.com/superhac/vpinos-repo (see /etc/apt/sources.list.d/vpinos.list,
+# github.com/vpinos/deb-repo (see /etc/apt/sources.list.d/vpinos.list,
 # shipped via includes.chroot). Installed here rather than from the
 # package list because includes.chroot content -- the source line and
 # its signing key -- is only copied into the image after the package-list
