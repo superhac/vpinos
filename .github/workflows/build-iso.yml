@@ -16,10 +16,23 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            lb_args: --binary-images iso-hybrid
+            iso: live-image-amd64.hybrid.iso
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            # syslinux, which iso-hybrid relies on, is x86 only.
+            lb_args: --binary-images iso --bootloaders grub-efi
+            iso: live-image-arm64.iso
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     permissions:
-      contents: write # needed only for the tag-triggered release step below
+      contents: read
 
     steps:
       - name: Checkout
@@ -42,8 +55,9 @@ jobs:
           docker run --rm --ulimit nofile=65536:65536 -v "$PWD:/work" -w /work vpinos-builder \
             lb config \
               --distribution trixie \
-              --architectures amd64 \
-              --binary-images iso-hybrid \
+              --architectures ${{ matrix.arch }} \
+              --linux-flavours ${{ matrix.arch }} \
+              ${{ matrix.lb_args }} \
               --archive-areas "main contrib non-free non-free-firmware" \
               --backports true \
               --bootappend-live "boot=live components username=vpinos"
@@ -71,49 +85,63 @@ jobs:
         run: |
           mkdir -p dist
           docker run --rm -v "$PWD:/work" -w /work vpinos-builder sh -c \
-            'mv live-image-amd64.* chroot.* binary.* dist/ 2>/dev/null; chown -R '"$(id -u):$(id -g)"' dist/' || true
+            'mv live-image-${{ matrix.arch }}.* chroot.* binary.* dist/ 2>/dev/null; chown -R '"$(id -u):$(id -g)"' dist/' || true
 
       - name: Upload ISO
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: vpinos-iso
-          path: dist/live-image-amd64.hybrid.iso
+          name: vpinos-iso-${{ matrix.arch }}
+          path: dist/${{ matrix.iso }}
           retention-days: 14
 
       - name: Upload build manifests
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: vpinos-build-manifests
+          name: vpinos-build-manifests-${{ matrix.arch }}
           path: |
-            dist/live-image-amd64.contents
-            dist/live-image-amd64.files
-            dist/live-image-amd64.packages
+            dist/live-image-${{ matrix.arch }}.contents
+            dist/live-image-${{ matrix.arch }}.files
+            dist/live-image-${{ matrix.arch }}.packages
           retention-days: 14
 
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: vpinos-build-log
+          name: vpinos-build-log-${{ matrix.arch }}
           path: lb-build.log
           retention-days: 14
 
-      # Only an actual version tag (e.g. v1.0.0) creates a real GitHub
-      # Release -- pushes to main just build + upload artifacts above,
-      # for CI verification. Attaching to a Release instead of an
-      # artifact also avoids the Actions storage quota entirely (the
-      # ISO alone is ~1.8G, more than the 500MB free-tier artifact
-      # quota on its own).
+  # Only an actual version tag (e.g. v1.0.0) creates a real GitHub
+  # Release -- pushes to main just build + upload artifacts above,
+  # for CI verification. One job after both builds publishes it, so the
+  # two builds never race to create the same release.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the ISOs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: vpinos-iso-*
+          merge-multiple: true
+          path: dist
+
+      - name: Download the build manifests
+        uses: actions/download-artifact@v4
+        with:
+          pattern: vpinos-build-manifests-*
+          merge-multiple: true
+          path: dist
+
       - name: Create GitHub Release
-        if: success() && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist/live-image-amd64.hybrid.iso
-            dist/live-image-amd64.contents
-            dist/live-image-amd64.files
-            dist/live-image-amd64.packages
+          files: dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -8,7 +8,7 @@
 # Plain .pref (not .pref.chroot): live-build keeps it in the final image,
 # so installed systems keep following backports for these packages on
 # `apt upgrade`. Everything not listed here stays on trixie.
-Package: src:linux src:linux-signed-amd64 src:mesa src:firmware-nonfree
+Package: src:linux src:linux-signed-amd64 src:linux-signed-arm64 src:mesa src:firmware-nonfree
 Pin: release n=trixie-backports
 Pin-Priority: 900
 
