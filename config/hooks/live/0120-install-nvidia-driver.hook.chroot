@@ -1,6 +1,18 @@
 #!/bin/sh
 set -e
 
+# amd64 only -- real CI failure, not a guess: this hook ran
+# unconditionally on the arm64 matrix leg too (see
+# .github/workflows/build-iso.yml) and broke the whole arm64 build,
+# `E: Package 'linux-headers-amd64' has no installation candidate`,
+# the moment it hit the hardcoded amd64 package names below. NVIDIA
+# does have an arm64 driver, but only for Jetson/Tegra SoCs via a
+# completely different packaging stack outside Debian's own archives --
+# irrelevant to this project's desktop/cabinet GPU scope, so this
+# skips outright on anything but amd64 rather than trying to make the
+# rest of this hook architecture-generic.
+[ "$(dpkg --print-architecture)" = "amd64" ] || exit 0
+
 # Precompiles the NVIDIA proprietary driver's kernel module
 # (nvidia-kernel-dkms, the actual DKMS source package `nvidia-driver`
 # depends on -- confirmed via packages.debian.org, trixie's
@@ -125,3 +137,24 @@ mkdir -p "/lib/modules/$kver/updates/dkms"
 cp -a "$backup_dir/." "/lib/modules/$kver/updates/dkms/"
 rm -rf "$backup_dir"
 depmod -a "$kver"
+
+# Real regression, confirmed on a real boot (not theoretical): with
+# nvidia-driver installed, `glx-alternative-nvidia`'s postinst
+# registers /etc/modules-load.d/nvidia.conf as an alternatives-managed
+# symlink (two layers deep: glx--nvidia-load.conf ->
+# nvidia--nvidia-load.conf -> /etc/nvidia/nvidia-<ver>/nvidia-load.conf,
+# whose actual content is the single line "nvidia-drm") --
+# unconditionally, regardless of /etc/vpinos/gpu-driver. That makes
+# systemd-modules-load.service try to `modprobe nvidia-drm` on *every*
+# boot, on *any* hardware, completely bypassing this feature's own
+# opt-in toggle (vpinos-gpu-driver.sh) -- on a machine without an
+# NVIDIA GPU this showed up as a real boot failure: "NVRM: No NVIDIA
+# GPU found", nvlink registering and immediately unregistering, and
+# systemd-modules-load.service reporting [FAILED]. Deleting just the
+# symlink (not touching the alternatives system's own bookkeeping, and
+# not the deeper files it points to, which vpinos-gpu-driver.sh's own
+# explicit `modprobe` calls still use normally) is enough --
+# /etc/modules-load.d/ is systemd's own "auto-load these at boot"
+# directory, read by nothing else, so removing one file from it has no
+# effect beyond stopping this specific unconditional auto-load.
+rm -f /etc/modules-load.d/nvidia.conf

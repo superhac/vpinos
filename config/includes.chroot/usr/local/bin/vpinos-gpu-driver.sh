@@ -27,11 +27,25 @@ case "$mode" in
         modprobe -r nouveau 2>/dev/null || true
         modprobe nvidia 2>/dev/null \
             || echo "$(date -Is): vpinos-gpu-driver: modprobe nvidia failed -- no NVIDIA hardware, or the precompiled module doesn't match this kernel?" >>/var/log/vpinos-menu.log
+        # nvidia-drm, separately, with modeset=1: this is what actually
+        # registers a DRM/KMS device Hyprland (or any Wayland compositor)
+        # can use -- NVIDIA's own well-documented requirement, not
+        # specific to this project. Without modeset=1, nvidia-drm loads
+        # but does no modesetting, leaving nothing for Hyprland to bind
+        # to. modprobe would auto-resolve `nvidia` as nvidia-drm's own
+        # dependency anyway; it's still loaded explicitly just above so
+        # the log line above can distinguish "no NVIDIA hardware at all"
+        # from a problem specific to the DRM layer.
+        modprobe nvidia-drm modeset=1 2>/dev/null \
+            || echo "$(date -Is): vpinos-gpu-driver: modprobe nvidia-drm modeset=1 failed" >>/var/log/vpinos-menu.log
         ;;
     *)
         # Default/anything unrecognized: plain open-source Mesa (NVK on
         # NVIDIA hardware, RADV on AMD, Intel's own driver) -- make sure
         # nvidia isn't still bound from a previous launch this session.
+        # nvidia-drm first, then nvidia -- the reverse of the load order
+        # above, since nvidia.ko can't unload while nvidia-drm.ko still
+        # references it.
         #
         # The explicit `modprobe nouveau` here isn't just defensive --
         # it's required. nvidia-driver ships
@@ -44,6 +58,7 @@ case "$mode" in
         # hardware IDs to a driver) -- it does not block an explicit
         # `modprobe nouveau` by exact name, which is exactly what this
         # does.
+        modprobe -r nvidia-drm 2>/dev/null || true
         modprobe -r nvidia 2>/dev/null || true
         modprobe nouveau 2>/dev/null || true
         ;;
