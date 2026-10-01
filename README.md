@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/APbAikFzutk"><strong>Watch the video on YouTube</strong></a>
+  <a href="https://www.youtube.com/playlist?list=PLCu9W14IS_rs"><strong>Watch the videos on YouTube</strong></a>
 </p>
 
 > [!WARNING]
