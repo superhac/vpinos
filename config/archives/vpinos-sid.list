@@ -1,0 +1,15 @@
+# sid (unstable) -- ONLY for nvidia-graphics-drivers (see
+# vpinos-sid.pref for why: trixie and trixie-backports are both
+# confirmed too old to build nvidia-kernel-dkms against this image's
+# kernel; sid 550.163.01-5.1 has the specific fix, confirmed directly
+# in its real changelog, https://sources.debian.org). Signed by the
+# same Debian archive keys trixie itself already trusts (debian-
+# archive-keyring, already present) -- no separate keyring needed,
+# unlike vpinos.list's third-party vpinball/vpinfe repo.
+#
+# Plain .list (not .list.chroot): kept in the final image, like
+# vpinos-sid.pref, so an installed system's `apt upgrade` keeps
+# resolving nvidia-graphics-drivers consistently rather than getting
+# stuck once sid moves past this snapshot. Everything else stays
+# pinned away from sid by vpinos-sid.pref's blanket low-priority rule.
+deb http://deb.debian.org/debian/ sid main contrib non-free non-free-firmware

@@ -159,6 +159,58 @@ boot_mode_submenu() {
     done
 }
 
+# Switches which GPU kernel module launch.sh binds before starting
+# Hyprland (see vpinos-gpu-driver.sh) -- unlike boot_mode_submenu above,
+# this takes effect on the very next graphical launch, not the next
+# reboot, and works identically live or installed: nothing graphical
+# has started by the point launch.sh applies it, on any boot. Opt-in
+# default ("default", meaning the open-source Mesa/NVK driver this
+# image already ships and uses everywhere else) -- NVIDIA proprietary
+# is precompiled at build time (0120-install-nvidia-driver.hook.chroot)
+# but Hyprland/Wayland compatibility with it hasn't been independently
+# verified by this project on real hardware, see notes/vpinos.md step 5.
+gpu_driver_submenu() {
+    while true; do
+        clear
+        cur=$(cat /etc/vpinos/gpu-driver 2>/dev/null)
+        [ -z "$cur" ] && cur=default
+        echo "=============================="
+        echo "         GPU Driver"
+        echo "=============================="
+        echo "Currently: $cur"
+        echo
+        echo "1) Default (open-source Mesa/NVK)"
+        echo "2) NVIDIA proprietary"
+        echo "q) Cancel, no change"
+        echo "=============================="
+        printf "Select an option: "
+        read -r gchoice
+        case "$gchoice" in
+            1)
+                echo "default" > /etc/vpinos/gpu-driver
+                echo "$(date -Is): menu: gpu-driver set to default" >>/var/log/vpinos-menu.log
+                echo "Will use the open-source driver on the next launch."
+                sleep 2
+                return
+                ;;
+            2)
+                echo "nvidia" > /etc/vpinos/gpu-driver
+                echo "$(date -Is): menu: gpu-driver set to nvidia" >>/var/log/vpinos-menu.log
+                echo "Will use the NVIDIA proprietary driver on the next launch."
+                sleep 2
+                return
+                ;;
+            q|Q)
+                return
+                ;;
+            *)
+                echo "Invalid option"
+                sleep 1
+                ;;
+        esac
+    done
+}
+
 while true; do
     clear
     echo "=============================="
@@ -179,6 +231,9 @@ while true; do
         [ -z "$cur" ] && cur=menu
         echo "9) Boot on startup: $cur"
     fi
+    gcur=$(cat /etc/vpinos/gpu-driver 2>/dev/null)
+    [ -z "$gcur" ] && gcur=default
+    echo "10) GPU Driver: $gcur"
     echo "q) Quit to shell"
     echo "s) Shutdown"
     echo "=============================="
@@ -254,6 +309,9 @@ while true; do
                 echo "Invalid option"
                 sleep 1
             fi
+            ;;
+        10)
+            gpu_driver_submenu
             ;;
         q|Q)
             break

@@ -1,0 +1,32 @@
+# Populates ~/tables from https://github.com/superhac/vpinos-test-tables
+# on first boot (see vpinos-fetch-tables.sh for the full reasoning and
+# the idempotency check) -- this image no longer bundles sample tables
+# directly, see notes/vpinos.md step 2.
+#
+# After=network-online.target / Wants=network-online.target: a real
+# download needs actual connectivity, not just NetworkManager.service
+# having started -- confirmed NetworkManager-wait-online.service is
+# enabled by default in this image, which is what makes
+# network-online.target actually block until a connection is up,
+# unlike network.target/network-pre.target (used by vpinos-hosts.service,
+# a different case: that one only writes a static file, never needs a
+# real connection, and deliberately runs BEFORE network comes up).
+#
+# User=vpinos (not root, not sudo'd): downloading sample tables into
+# the kiosk user's own home directory isn't a privilege boundary, same
+# reasoning as boot-mode/gpu-driver being vpinos-writable directly --
+# and running as vpinos from the start means whatever gets created is
+# already correctly owned, no chown-after-the-fact hook step needed.
+[Unit]
+Description=VPinOS: fetch sample tables into ~/tables on first boot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=vpinos
+ExecStart=/usr/local/bin/vpinos-fetch-tables.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,34 @@
+# Pulls nvidia-graphics-drivers specifically from sid (see
+# vpinos-sid.list) -- trixie (550.163.01-2) and trixie-backports
+# (550.163.01-4~bpo13+1) are both confirmed, via a real failed build,
+# too old to compile nvidia-kernel-dkms against this image's kernel
+# (7.1.13, from trixie-backports -- see vpinos-backports.pref): a
+# kernel VMA-locking refactor broke the build
+# (`VMA_LOCK_OFFSET`/`__is_vma_write_locked` no longer match). Only
+# sid's 550.163.01-5.1 has the fix -- confirmed directly in its real
+# changelog (https://sources.debian.org/src/nvidia-graphics-drivers/
+# 550.163.01-5.1/debian/changelog/): "Fix kernel module build failures
+# against Linux 7.0" + "Backport VMA locking changes from 595.44.03:
+# rename VMA_LOCK_OFFSET to VM_REFCNT_EXCLUDE_READERS_FLAG and add
+# nv_is_vma_write_locked wrapper" -- the exact symptom hit here.
+#
+# Unlike trixie-backports, sid does NOT self-declare NotAutomatic in
+# its own Release file (backports does, which is why
+# vpinos-backports.pref doesn't need a blanket low-priority rule of
+# its own) -- without the blanket rule below, apt would treat sid at
+# the same default priority as trixie itself, risking unintended
+# version-mixing ("frankendebian") across any package, not just this
+# one. `*` + a priority below 100 means "never installed unless a more
+# specific pin says otherwise" -- confirmed this is the correct
+# pattern per apt_preferences(5), not a guess.
+Package: *
+Pin: release a=unstable
+Pin-Priority: 1
+
+# The actual override -- only this one source package (and whatever it
+# pulls in as real dependencies) is allowed to resolve from sid.
+# `src:` pins every binary package built from it, matching
+# vpinos-backports.pref's own convention.
+Package: src:nvidia-graphics-drivers
+Pin: release a=unstable
+Pin-Priority: 900

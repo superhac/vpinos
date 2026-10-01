@@ -30,3 +30,11 @@
 # polkit trivially authorizes a root-owned caller -- same reasoning and
 # same narrow-scope style as the two rules above.
 %sudo ALL=(ALL) NOPASSWD: /usr/bin/nmtui
+
+# launch.sh calls vpinos-gpu-driver.sh (every invocation, before
+# starting Hyprland) to switch which GPU kernel module is bound, per
+# the "GPU Driver" menu option. modprobe/rmmod need CAP_SYS_MODULE
+# (root) -- scoped to this one dedicated script, not a blanket modprobe
+# rule, so vpinos can't load/unload arbitrary kernel modules. Same
+# narrow-scope reasoning as the three rules above.
+%sudo ALL=(ALL) NOPASSWD: /usr/local/bin/vpinos-gpu-driver.sh

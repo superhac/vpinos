@@ -185,6 +185,17 @@ case "$client_name" in
     installer | vpxconfig) hypr_config=/etc/vpinos/hyprland-installer.conf ;;
 esac
 
+# Switches which GPU kernel module is bound (per /etc/vpinos/gpu-driver,
+# see vpinos-menu.sh's "GPU Driver" option) before anything graphical
+# starts -- the one point every client type already passes through, so
+# one call here covers all of them. `sudo` (scoped in
+# /etc/sudoers.d/vpinos): modprobe/rmmod need CAP_SYS_MODULE, which
+# `vpinos` doesn't have. Cheap/idempotent if nothing needs to change,
+# so unconditional on every launch rather than only when the installer
+# runs (which already has root) -- this applies identically whether
+# this invocation itself is root or not.
+sudo /usr/local/bin/vpinos-gpu-driver.sh
+
 # --i-am-really-stupid: Hyprland refuses to run as root without this
 # (confirmed in `man hyprland` -- "Omits root user privileges check").
 # Weston never had this restriction, so it's a new wrinkle this

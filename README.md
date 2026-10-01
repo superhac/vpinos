@@ -90,6 +90,7 @@ The menu launches automatically on login — a plain numbered shell prompt
 7) Install VPinOS
 8) VPXConfig (Advanced VPinball Configuration)
 9) Boot on startup: menu       (installed systems only)
+10) GPU Driver: default
 q) Quit to shell
 s) Shutdown
 ```
@@ -116,6 +117,13 @@ you pick a program to launch automatically on boot instead of this menu, e.g.
 VPinFE for a cabinet that should go straight to the frontend. Quitting that
 program (or it exiting for any other reason) always falls back to this menu,
 never a dead end.
+
+"GPU Driver" switches between the open-source driver this image uses by
+default (Mesa/NVK on NVIDIA hardware, RADV on AMD, Intel's own driver) and
+the NVIDIA proprietary driver, precompiled into the image at build time.
+Takes effect on the very next launch — no reboot needed, live or installed.
+Off by default: Hyprland/Wayland compatibility with the proprietary driver
+hasn't been independently verified on real hardware by this project.
 
 "Shutdown" asks for confirmation, then powers the machine off.
 
@@ -176,7 +184,23 @@ Prebuilt ISOs are published on the
   be far too slow for pinball.
 - The installer sets up a **UEFI** boot (GRUB EFI). Installing onto a
   BIOS-only machine has not been tested.
-- A network connection is needed to update, but not to run.
+- A network connection is needed to update, and for the sample tables
+  below on first boot, but not otherwise to run.
+
+## Sample tables
+
+VPinFE's table list (`~/tables`) starts empty on a fresh boot. A
+one-time systemd service, `vpinos-fetch-tables.service`, downloads a
+small set of sample tables from
+[`superhac/vpinos-test-tables`](https://github.com/superhac/vpinos-test-tables)
+into it as soon as the network comes up &mdash; these used to be bundled
+directly in the image, but were moved out once they pushed the ISO
+close to GitHub's 2&nbsp;GB release-asset limit. Only runs if `~/tables`
+is empty, so it's genuinely one-time on an **installed** system (every
+boot after the first finds it already populated) and runs every boot
+on a **live** session (nothing persists there anyway). No network on
+first boot just means an empty table list until a later boot has one;
+nothing else is affected.
 
 ## Updates: vpinball and vpinfe
 

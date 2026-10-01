@@ -1,0 +1,127 @@
+#!/bin/sh
+set -e
+
+# Precompiles the NVIDIA proprietary driver's kernel module
+# (nvidia-kernel-dkms, the actual DKMS source package `nvidia-driver`
+# depends on -- confirmed via packages.debian.org, trixie's
+# non-free-firmware component, already enabled by this image's
+# --archive-areas) against whatever kernel is already installed in
+# this chroot by this point (linux-image-amd64, from the main package
+# list, installed well before any hook runs). DKMS just builds against
+# whatever kernel headers are present -- nothing here is pinned to a
+# specific kernel version, so this automatically tracks whatever this
+# image ships, including future trixie-backports kernel bumps, with no
+# changes needed in this file.
+#
+# Pulls nvidia-graphics-drivers from sid specifically (see
+# config/archives/vpinos-sid.list/.pref) -- confirmed via a real failed
+# build that neither trixie's (550.163.01-2) nor trixie-backports'
+# (550.163.01-4~bpo13+1) nvidia-kernel-dkms compiles against this
+# image's 7.1.13 kernel (a kernel VMA-locking refactor broke the
+# build: `VMA_LOCK_OFFSET`/`__is_vma_write_locked` no longer match).
+# Only sid's 550.163.01-5.1 has the fix, confirmed directly in its
+# real changelog. Nothing below needs to reference sid explicitly --
+# the pin file alone makes apt resolve nvidia-graphics-drivers'
+# packages from sid automatically, same pattern as the plain `apt-get
+# install hyprland` in the main package list relying on
+# vpinos-backports.pref rather than an explicit `/trixie-backports`
+# suffix.
+#
+# Opt-in only -- see vpinos-menu.sh's "GPU Driver" option and
+# vpinos-gpu-driver.sh. The open-source Mesa/NVK driver (this image's
+# existing default, works via the broad firmware-linux install) stays
+# the default; this is precompiled and shipped but not loaded unless
+# explicitly selected, since Hyprland/Wayland compatibility with the
+# proprietary driver hasn't been independently verified by this
+# project on real NVIDIA hardware yet -- see notes/vpinos.md step 5.
+#
+# build-essential/linux-headers-amd64/dkms are needed ONLY to compile
+# the module -- stripped afterward entirely, matching this image's
+# existing policy of never shipping a compiler (see e.g. vpxconfig/
+# vpinball's own package comments: no toolchain needed since they ship
+# as prebuilt .debs). What's actually kept: the compiled module itself
+# and nvidia-driver's userspace libraries (libnvidia-*, Vulkan/EGL
+# ICDs, nvidia-smi, Xorg driver) -- not the umbrella `nvidia-driver`
+# metapackage, not `nvidia-kernel-dkms`, not `dkms`, not the compiler.
+#
+# Two earlier approaches were tried and failed on a REAL build before
+# landing on this one -- recorded here so neither gets retried:
+#   1. Keep `dkms` installed (it's "just a script framework"). Wrong:
+#      `dkms` genuinely Depends on gcc/cpp (it needs a real compiler to
+#      do its job) -- autoremove correctly refused to touch them,
+#      leaving ~164MB of dead-weight compiler for a dkms that, by
+#      design, was never going to be used again anyway (see the
+#      kernel-upgrade trade-off note below).
+#   2. `dpkg --purge --force-depends dkms` alone, leaving
+#      `nvidia-kernel-dkms`'s now-unsatisfied dependency on it as
+#      "cosmetic" breakage. Wrong: apt-get refuses to run ANY further
+#      command, including a plain `autoremove`, the instant it sees a
+#      broken dependency anywhere on the system ("E: Unmet
+#      dependencies") -- this isn't cosmetic, it blocks every
+#      subsequent hook's own apt-get calls too.
+#
+# The approach that actually works: back up the already-compiled
+# module files, then purge the *whole* DKMS chain in one atomic
+# transaction -- the umbrella `nvidia-driver` metapackage,
+# `nvidia-kernel-dkms` (whose own removal script calls `dkms remove`,
+# which is why the backup happens first), `dkms`, and the compiler --
+# all together, so nothing is ever left depending on something that's
+# gone. Then restore the backed-up module files directly and
+# regenerate `depmod`'s database so `modprobe nvidia` can find them --
+# modprobe only needs the .ko(.xz) file present under
+# /lib/modules/<kver>/ and depmod's module-alias database kept current;
+# neither depends on dkms's own bookkeeping surviving.
+apt-get install -y linux-headers-amd64 build-essential dkms nvidia-driver
+
+kver=$(ls /lib/modules)
+backup_dir=/root/nvidia-module-backup
+mkdir -p "$backup_dir"
+cp -a "/lib/modules/$kver/updates/dkms/." "$backup_dir/"
+
+# Protect every real userspace NVIDIA/CUDA package from the upcoming
+# autoremove -- broad name match rather than a hand-maintained list,
+# so nothing real (libnvidia-*, the Xorg/Vulkan/EGL drivers,
+# nvidia-smi, firmware-nvidia-gsp, ...) gets swept away just because it
+# was originally pulled in as a dependency of the metapackage this
+# removes next. Matches nothing in the actual toolchain (gcc-14,
+# cpp-14, linux-headers-*-common), which is exactly what should still
+# get cleaned up.
+apt-mark manual $(dpkg-query -W -f='${Package}\n' | grep -iE 'nvidia|cuda')
+
+# Known trade-off of stripping the toolchain here rather than keeping
+# it on the installed system: DKMS's whole mechanism is rebuilding the
+# module automatically whenever a NEW kernel is installed (a postinst
+# hook on the kernel package) -- without a compiler/headers present on
+# the installed system, that automatic rebuild can't happen. A kernel
+# upgrade (e.g. a future trixie-backports bump) would leave the
+# NVIDIA module built only for the OLD kernel; vpinos-gpu-driver.sh's
+# `modprobe nvidia` would then fail (logged, not fatal -- see that
+# script) until this hook's build step is effectively redone, i.e. the
+# ISO is rebuilt. Not solved here -- flagging it rather than silently
+# shipping a driver that can go stale after an unrelated kernel update.
+apt-get purge -y nvidia-driver nvidia-kernel-dkms dkms build-essential linux-headers-amd64
+apt-get autoremove -y
+
+# `apt-get autoremove` alone, even run twice, does NOT fully sweep this
+# specific cluster -- confirmed directly against the real chroot left
+# over from an earlier build of this hook: it correctly caught
+# g++/libstdc++-14-dev, but left gcc-14/cpp-14/dpkg-dev/
+# linux-headers-*-common genuinely orphaned (nothing in the installed
+# package set depends on any of them -- verified with `apt-cache
+# rdepends --installed` and a real `apt-get remove --purge --dry-run`
+# against that chroot) yet unremoved; this is a known real limitation
+# of autoremove's garbage-collection pass on larger multi-level
+# clusters, not something unique to this hook. Naming the stragglers
+# explicitly, confirmed to cascade cleanly (apt pulls in every
+# remaining gcc-14-for-host/cpp-14-for-host/-x86-64-linux-gnu/etc.
+# sub-package on its own once these three are named) -- gcc-14/cpp-14
+# hardcode trixie's current default GCC version; if a future Debian
+# point release ever bumps it, worst case is this cluster stops
+# matching and the ~164MB comes back, not a build failure.
+apt-get purge -y gcc-14-x86-64-linux-gnu cpp-14-x86-64-linux-gnu dpkg-dev
+apt-get autoremove -y
+
+mkdir -p "/lib/modules/$kver/updates/dkms"
+cp -a "$backup_dir/." "/lib/modules/$kver/updates/dkms/"
+rm -rf "$backup_dir"
+depmod -a "$kver"
