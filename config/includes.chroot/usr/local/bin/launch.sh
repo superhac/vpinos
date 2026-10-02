@@ -46,12 +46,24 @@ log_file="/var/log/vpinos-launch.log"
 compositor_pid=$$
 
 wait_for_glob() {
-    # Polls for a glob pattern to match a real file, up to ~10s.
+    # Polls for a glob pattern to match a real file, up to ~30s.
     # Prints the first match and returns 0, or prints nothing and
     # returns 1 on timeout.
+    #
+    # Was ~10s (100 iterations) -- bumped after a real report of
+    # launch.sh's own "timed out waiting for the compositor's Wayland
+    # socket" message on real 3-monitor hardware. Not yet confirmed
+    # whether Hyprland there is genuinely hung or just slower than 10s
+    # to finish real multi-monitor output negotiation (EDID reads
+    # across 3 real displays, GSP firmware handshake on the proprietary
+    # NVIDIA driver, etc. all plausibly take longer than anything this
+    # project has tested against before) -- widening the window first,
+    # since a too-tight timeout would look identical to a real hang
+    # from here, and costs nothing if it turns out to be a real hang
+    # instead (same eventual failure, just reported ~20s later).
     pattern="$1"
     i=0
-    while [ "$i" -lt 100 ]; do
+    while [ "$i" -lt 300 ]; do
         match=$(ls $pattern 2>/dev/null | head -n1)
         if [ -n "$match" ]; then
             echo "$match"
@@ -207,4 +219,19 @@ sudo /usr/local/bin/vpinos-gpu-driver.sh
 # documented for exactly this purpose; verify on a real installer boot.
 hypr_flags=""
 [ "$client_name" = "installer" ] && hypr_flags="--i-am-really-stupid"
+
+# WAYLAND_DEBUG=1: same real debugging tool as the Chrome-rendering
+# investigation (see the stdbuf/buffering comment above) -- that one
+# was about a Wayland *client*'s traffic; this applies it to Hyprland
+# itself, since Hyprland links against libwayland-server and respects
+# this var the same way any libwayland program does, surfacing the raw
+# protocol message traffic the compositor's own Wayland server is
+# handling. Paired with hyprland.conf's debug:disable_logs = false
+# (Hyprland's own compositor-level logging, a different, higher-level
+# stream -- monitor detection/output config/client management, not raw
+# protocol messages) for as complete a picture as possible while a
+# real startup hang (multi-monitor, confirmed via launch.sh's own
+# "timed out waiting for the compositor's Wayland socket" message) is
+# still being tracked down.
+export WAYLAND_DEBUG=1
 exec /usr/bin/Hyprland $hypr_flags --config "$hypr_config" >>/var/log/vpinos-hyprland.log 2>&1
