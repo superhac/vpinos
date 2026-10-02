@@ -222,4 +222,43 @@ systemctl disable nvidia-persistenced.service
 # hardware in a kiosk, not something that hot-replugs mid-session to
 # actually trigger a stray re-auto-load in practice.
 rm -f /etc/modprobe.d/nvidia-blacklists-nouveau.conf
+
+# Confirmed via a real hardware test that the fix above, while
+# genuinely correct (verified directly against the tester's own real
+# initramfs listing: nvidia-blacklists-nouveau.conf really is gone),
+# did NOT fix the actual symptom -- same multi-monitor failure on
+# 1.0.20. The real mechanism was never the blacklist alone. Found by
+# actually reading the content of a THIRD nvidia modprobe.d file,
+# /etc/modprobe.d/nvidia.conf (resolves, through the same alternatives
+# chain as everything else here, to
+# /etc/nvidia/nvidia-<ver>/nvidia-modprobe.conf), which this hook had
+# never actually looked inside before. It ends with wildcard PCI
+# aliases -- vendor 10DE (NVIDIA) matched against any display/3D
+# controller class, explicitly commented "sets higher precedence" --
+# that redirect the kernel's own udev hardware auto-detection to load
+# `nvidia` (itself redirected to the real `nvidia-current` module by an
+# `install nvidia ...` line earlier in the same file) the moment it
+# sees *any* NVIDIA GPU. This is completely independent of nouveau's
+# blacklist and of /etc/vpinos/gpu-driver -- it fires at early boot,
+# before vpinos-gpu-driver.sh ever runs, on every boot, regardless of
+# mode. Since `nvidia` alone (without `nvidia-drm modeset=1`, which
+# only vpinos-gpu-driver.sh applies, later) does no actual
+# modesetting, the console was ending up with neither driver correctly
+# serving KMS either way -- matching the symptom exactly.
+#
+# Can't touch nvidia.conf itself: its `install nvidia modprobe -i
+# nvidia-current ...` line is what lets vpinos-gpu-driver.sh's own
+# plain `modprobe nvidia` resolve to the real module at all (there is
+# no file literally named nvidia.ko, only nvidia-current.ko). Adding a
+# separate, independently-owned blacklist instead -- same proven
+# mechanism as nouveau's own blacklist earlier in this hook: `blacklist
+# nvidia` only blocks *automatic* alias-based loading (exactly this PCI
+# auto-detection path), not an explicit `modprobe nvidia` by exact
+# name, which is exactly what vpinos-gpu-driver.sh still does. Unlike
+# the nouveau blacklist, this one is deliberately kept in the
+# initramfs too (not hidden-then-restored) -- the goal here is the
+# opposite: nvidia should never auto-load at any boot stage, on any
+# hardware, unless "nvidia" mode is explicitly selected.
+echo "blacklist nvidia" > /etc/modprobe.d/vpinos-nvidia-no-autoload.conf
+
 update-initramfs -u -k all
