@@ -158,3 +158,68 @@ depmod -a "$kver"
 # directory, read by nothing else, so removing one file from it has no
 # effect beyond stopping this specific unconditional auto-load.
 rm -f /etc/modules-load.d/nvidia.conf
+
+# Same real-boot regression, same root pattern, different package:
+# nvidia-persistenced's own postinst enables
+# nvidia-persistenced.service (WantedBy=multi-user.target)
+# unconditionally too -- confirmed via a real boot screenshot:
+# "[FAILED] Failed to start nvidia-persistenced.service". Its own
+# shipped unit file literally calls itself "a sample systemd service
+# file" -- it exists purely to avoid GPU re-init overhead between
+# client processes on compute workloads, not something vpinball/
+# Hyprland need to actually render anything, and it can't do anything
+# useful without the nvidia kernel module loaded (which, by design,
+# only happens when "nvidia" mode is explicitly selected). Disabled
+# outright for the same opt-in reasoning as the modules-load.d fix
+# above, rather than something more involved like a ConditionPathExists
+# drop-in keyed to /etc/vpinos/gpu-driver -- nothing in this project
+# depends on persistence-daemon behavior even when nvidia mode *is*
+# selected.
+systemctl disable nvidia-persistenced.service
+
+# Real multi-monitor regression, confirmed on real NVIDIA hardware
+# (live session -- fresh boot every time, no persisted state involved):
+# the text-mode vpinos-menu couldn't even display with more than one
+# monitor connected. Root-caused by directly extracting the real built
+# initrd (`unmkinitramfs`) rather than guessing: nvidia-blacklists-
+# nouveau.conf's own comment says it needs `update-initramfs -u` to
+# take effect, and installing nvidia-driver above does trigger exactly
+# that -- confirmed the blacklist really is baked into the initramfs,
+# right alongside nouveau.ko.xz itself. That matters because
+# vpinos-menu runs on the plain text console, before launch.sh/
+# vpinos-gpu-driver.sh ever execute -- with nouveau blacklisted at the
+# *initramfs* stage (not just the real root's runtime modprobe.d, which
+# is the only place vpinos-gpu-driver.sh's own bypass-by-exact-name
+# logic can reach), nothing auto-loads nouveau's real KMS driver for
+# the early console anymore, falling back to a generic single-output
+# framebuffer driver that apparently can't cope with multiple connected
+# monitors.
+#
+# First fix tried, confirmed WRONG on a real build, not just in
+# theory: hide the blacklist, regenerate, restore it afterward --
+# reasoning being "only the initramfs needs to not see it, the real
+# root should keep it". Didn't work: live-build's own internal
+# `lb chroot_hacks` stage runs *after every hook in this project*,
+# including 0200-enable-kiosk (the last one), and does its own kernel-
+# package cleanup there (removing a stale duplicate linux-image-amd64
+# version) which triggers yet another automatic update-initramfs --
+# confirmed directly in the build log (`lb chroot_hacks` / "Del
+# linux-image-amd64 7.1.8-1~bpo13+1" / "update-initramfs: Generating"
+# all appearing together, well after this hook had already restored
+# the file). There's no hook point after chroot_hacks to intervene
+# again, so "restore it before this hook ends" was never going to
+# survive to the actual final initramfs.
+#
+# Real fix: don't restore it at all -- remove the blacklist
+# permanently, for both the initramfs and the real root. Whatever
+# regeneration ends up being the final one (this one, or
+# chroot_hacks's later one) will be correct either way, since the
+# source file is simply gone by then. The real-root protection this
+# gives up (stopping nouveau from re-auto-loading while "nvidia" mode
+# is active) was always a secondary nicety, not load-bearing:
+# vpinos-gpu-driver.sh already explicitly `modprobe -r nouveau`s on
+# *every* launch.sh invocation regardless, and this is static GPU
+# hardware in a kiosk, not something that hot-replugs mid-session to
+# actually trigger a stray re-auto-load in practice.
+rm -f /etc/modprobe.d/nvidia-blacklists-nouveau.conf
+update-initramfs -u -k all
