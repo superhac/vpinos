@@ -261,4 +261,28 @@ rm -f /etc/modprobe.d/nvidia-blacklists-nouveau.conf
 # hardware, unless "nvidia" mode is explicitly selected.
 echo "blacklist nvidia" > /etc/modprobe.d/vpinos-nvidia-no-autoload.conf
 
+# Persistent modeset=1/fbdev=1, as a belt-and-suspenders second layer on
+# top of vpinos-gpu-driver.sh's own explicit `modprobe nvidia-drm
+# modeset=1 fbdev=1` call (see notes/nvidia-proprietary.md's "Hyprland/
+# Wayland fixes" section for the real symptoms each flag fixes -- a
+# black Table screen under direct scanout for the general nvidia setup,
+# and a black console returning from Hyprland specifically for fbdev).
+# This file matters because this exact class of bug already happened
+# once: the PCI-alias auto-load path blocked by the blacklist just
+# above would otherwise have loaded nvidia-drm as a plain dependency of
+# `nvidia`, with no parameters at all -- exactly the "loads but does no
+# modesetting" multi-monitor console regression a few sections up in
+# this same hook. A persistent options file applies no matter *how*
+# nvidia-drm ends up loaded, so any *other* unanticipated auto-load path
+# (now or in some future Debian/NVIDIA packaging change) still gets the
+# correct params automatically, rather than silently repeating that same
+# bug through a path nobody thought to block explicitly. Also the
+# standard, generic recommendation for any Wayland compositor on NVIDIA
+# per the Debian wiki (https://wiki.debian.org/NvidiaGraphicsDrivers),
+# independent confirmation this isn't a Hyprland-specific guess.
+cat > /etc/modprobe.d/nvidia-wayland.conf << 'EOF'
+options nvidia-drm modeset=1
+options nvidia-drm fbdev=1
+EOF
+
 update-initramfs -u -k all
