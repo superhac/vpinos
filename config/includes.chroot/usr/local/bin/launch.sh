@@ -219,19 +219,4 @@ sudo /usr/local/bin/vpinos-gpu-driver.sh
 # documented for exactly this purpose; verify on a real installer boot.
 hypr_flags=""
 [ "$client_name" = "installer" ] && hypr_flags="--i-am-really-stupid"
-
-# WAYLAND_DEBUG=1: same real debugging tool as the Chrome-rendering
-# investigation (see the stdbuf/buffering comment above) -- that one
-# was about a Wayland *client*'s traffic; this applies it to Hyprland
-# itself, since Hyprland links against libwayland-server and respects
-# this var the same way any libwayland program does, surfacing the raw
-# protocol message traffic the compositor's own Wayland server is
-# handling. Paired with hyprland.conf's debug:disable_logs = false
-# (Hyprland's own compositor-level logging, a different, higher-level
-# stream -- monitor detection/output config/client management, not raw
-# protocol messages) for as complete a picture as possible while a
-# real startup hang (multi-monitor, confirmed via launch.sh's own
-# "timed out waiting for the compositor's Wayland socket" message) is
-# still being tracked down.
-export WAYLAND_DEBUG=1
 exec /usr/bin/Hyprland $hypr_flags --config "$hypr_config" >>/var/log/vpinos-hyprland.log 2>&1
