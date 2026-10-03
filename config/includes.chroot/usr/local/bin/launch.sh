@@ -208,6 +208,29 @@ esac
 # this invocation itself is root or not.
 sudo /usr/local/bin/vpinos-gpu-driver.sh
 
+# Nvidia-specific GL/EGL vendor env vars -- a real report, confirmed
+# directly, of vpxconfig's Tk UI rendering with invisible controls
+# (they'd only appear on hover, implying stale/uncomposited paint, not
+# a crash) with "nvidia" mode selected. This is the standard fix
+# documented at https://wiki.hypr.land/Nvidia/ for exactly this class
+# of symptom: without forcing glvnd to resolve to nvidia's own
+# GBM/EGL/GLX implementations, Xwayland/Tk can end up negotiating a
+# mismatched render path against the compositor. Gated on gpu-driver
+# mode (reading the same file vpinos-gpu-driver.sh just acted on --
+# its own process can't export back into this one) since GBM_BACKEND=
+# nvidia-drm specifically would break the default open-source Mesa/NVK
+# path for everyone else if set unconditionally.
+# __EGL_VENDOR_LIBRARY_FILENAMES points at a file confirmed present in
+# this image (/usr/share/glvnd/egl_vendor.d/10_nvidia.json, shipped by
+# the nvidia-driver packages installed in
+# 0120-install-nvidia-driver.hook.chroot).
+if [ "$(cat /etc/vpinos/gpu-driver 2>/dev/null)" = "nvidia" ]; then
+    export LIBVA_DRIVER_NAME=nvidia
+    export GBM_BACKEND=nvidia-drm
+    export __GLX_VENDOR_LIBRARY_NAME=nvidia
+    export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json
+fi
+
 # --i-am-really-stupid: Hyprland refuses to run as root without this
 # (confirmed in `man hyprland` -- "Omits root user privileges check").
 # Weston never had this restriction, so it's a new wrinkle this

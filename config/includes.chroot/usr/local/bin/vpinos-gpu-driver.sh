@@ -36,8 +36,23 @@ case "$mode" in
         # dependency anyway; it's still loaded explicitly just above so
         # the log line above can distinguish "no NVIDIA hardware at all"
         # from a problem specific to the DRM layer.
-        modprobe nvidia-drm modeset=1 2>/dev/null \
-            || echo "$(date -Is): vpinos-gpu-driver: modprobe nvidia-drm modeset=1 failed" >>/var/log/vpinos-menu.log
+        #
+        # fbdev=1: a real report, confirmed directly, of the console
+        # going black returning from Hyprland/vpinball back to the
+        # vpinos-menu text console with "nvidia" mode selected --
+        # exactly the documented purpose of this flag (per
+        # https://wiki.hypr.land/Nvidia/): without an fbdev-backed
+        # console on the nvidia-drm KMS device, there's nothing for the
+        # kernel's own fbcon to fall back to once Hyprland releases DRM
+        # master. Confirmed this exact driver build genuinely supports
+        # it -- checked the actual shipped nvidia-current-drm.ko's own
+        # module parameter info directly, not assumed from a general
+        # "needs 555+" rule some other NVIDIA driver versions follow;
+        # this sid-sourced 550.163.01-5.1 build (see vpinos-sid.pref --
+        # pulled from sid specifically for unrelated VMA-locking
+        # backports) has it.
+        modprobe nvidia-drm modeset=1 fbdev=1 2>/dev/null \
+            || echo "$(date -Is): vpinos-gpu-driver: modprobe nvidia-drm modeset=1 fbdev=1 failed" >>/var/log/vpinos-menu.log
         ;;
     *)
         # Default/anything unrecognized: plain open-source Mesa (NVK on
